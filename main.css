@@ -1,0 +1,28 @@
+
+.galleryContainer{
+    border: 5px solid red;
+    width: 580px;
+    height: 400px;
+    background-color: wheat;
+    overflow : auto;
+    position: relative; 
+}
+.element{
+    left:400px;
+    top:400px;
+    border-radius: 30px;
+    width: 75px;
+    height: 60px;
+    position: absolute; 
+    transition: left 1s ease, top 1s ease;
+} 
+.volumeElem{
+    width: 700px;
+    height: 400px;
+    background-color: wheat;
+}
+.imgContainer{
+    height:100%;
+    width:100%;
+    border-radius: 30px;
+}
