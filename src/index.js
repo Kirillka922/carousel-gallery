@@ -4,7 +4,11 @@ async function fetchHandler() {
   try {
     const response = await fetch(url);
     const data = await response.json();
-    return data.drinks[0].strDrinkThumb;
+    const link = data.drinks[0].strDrinkThumb;
+    const dataLink = await fetch(link);
+    const blob = await dataLink.blob();
+
+    return URL.createObjectURL(blob);
   } catch (error) {
     console.log(error);
     return false;
