@@ -1,3 +1,8 @@
+/******/ (() => { // webpackBootstrap
+var __webpack_exports__ = {};
+/*!**********************!*\
+  !*** ./src/index.js ***!
+  \**********************/
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 
 async function fetchHandler() {
@@ -207,3 +212,7 @@ container.addEventListener("mouseout", function (event) {
 });
 
 printContainers();
+
+/******/ })()
+;
+//# sourceMappingURL=index.js.map
