@@ -7,16 +7,14 @@ async function fetchHandler() {
     const link = data.drinks[0].strDrinkThumb;
     const dataLink = await fetch(link);
     const blob = await dataLink.blob();
-
     return URL.createObjectURL(blob);
   } catch (error) {
     console.log(error);
-    return false;
   }
 }
 function addLoading(elem) {
   function createImg(className, link, cont) {
-    let img = document.createElement("img");
+    const img = document.createElement("img");
     img.className = className;
     img.setAttribute("src", link);
     cont.append(img);
@@ -35,8 +33,8 @@ async function addImgToCont(elem) {
   addLoading(elem);
 
   let link = await fetchHandler();
-  if (!link) {
-    let button = document.createElement("button");
+  if (link === undefined) {
+    const button = document.createElement("button");
     button.className = "buttonReload";
     elem.append(button);
     let textNode = document.createTextNode("Try again");
@@ -44,30 +42,29 @@ async function addImgToCont(elem) {
     button.addEventListener("click", addImgToCont.bind(null, elem), {
       once: true,
     });
+    elem.firstElementChild.src = "";
+    return;
   }
 
   elem.firstElementChild.src = link;
 }
+const container = document.getElementById("container");
+let notVisibleElem = null;
 
-let windowWidth = window.innerWidth / 2;
-const DISPLACEMENT_RADIUS_X = 400;
-const RADIUS_Y = 400;
 const STEP_TRANSITION = 5;
 const ALPHA_ANGLE = 2 * 3.14;
-const SCROLL_START_POSITION = 72;
+const SCROLL_START_POSITION = 1;
 const START_TIME = 1304;
 const FIX_DISTANCE_PICTURES = 60;
-const container = document.getElementById("container");
-let RADIUSX = window.innerWidth - DISPLACEMENT_RADIUS_X;
-let galleryContainers = null;
+const MINIMAL_WINDOW_SIZE = 800;
+const SCROLL_INTERVAL = 500;
+
 let positionNow = 0;
 let arrayContainers = [];
-let isFinishReplacement = false;
-let mouseOnContainer = false;
+let isFinishReplacement = true;
 
 function addPoz(direction) {
-  container.scrollLeft = SCROLL_START_POSITION;
-
+  notVisibleElem.scrollTop = SCROLL_START_POSITION;
   let lastElemLeft = null;
   let lastElemTop = null;
 
@@ -80,12 +77,12 @@ function addPoz(direction) {
 
     setTimeout(() => {
       elem.style.display = "block";
-      if (direction) arrayContainers.unshift(arrayContainers.pop());
-      if (!direction) arrayContainers.push(arrayContainers.shift());
+      if (direction === -1) arrayContainers.unshift(arrayContainers.pop());
+      if (direction === 1) arrayContainers.push(arrayContainers.shift());
     }, 500);
   }
 
-  if (direction) {
+  if (direction === -1) {
     positionNow++;
     lastElemLeft = arrayContainers[0].style.left;
     lastElemTop = arrayContainers[0].style.top;
@@ -112,102 +109,79 @@ function addPoz(direction) {
     }
   }
 
-  isFinishReplacement = false;
+  isFinishReplacement = true;
 }
 
-function printContainers(isResize = false) {
-  container.scrollLeft = SCROLL_START_POSITION;
-  const arrayCords = createArrayCords(isResize);
+function printContainers() {
+  for (let i = 0; i < 7; i++) {
+    createDiv("element", container);
+  }
+
+  notVisibleElem = createDiv("notVisibleElem", container);
+  createDiv("volumeElem", notVisibleElem);
+
+  notVisibleElem.scrollTop = SCROLL_START_POSITION;
+  const timeArray = createTime();
+
+  let windowSize = container.getBoundingClientRect().width;
+  if (windowSize < MINIMAL_WINDOW_SIZE) windowSize = MINIMAL_WINDOW_SIZE;
+  const centerX = windowSize / 2;
+  const centerY = container.getBoundingClientRect().height;
+  const widthPicture = windowSize / (arrayContainers.length + 1);
+  const heightPicture = (widthPicture / 3) * 2;
+  const radiusX = widthPicture * 2 - centerX * 2;
+  const radiusY = centerY;
+  const widthHalfElement = widthPicture / 2;
 
   arrayContainers.forEach((object, i) => {
-    arrayCords[i] = arrayCords[i] - STEP_TRANSITION;
-    object.style.width = `${
-      window.innerWidth / (arrayContainers.length + 1)
-    }px`;
-    object.style.height = `${
-      window.innerWidth / (arrayContainers.length + 1) / 1.5
-    }px`;
+    timeArray[i] = timeArray[i] - STEP_TRANSITION;
+
+    object.style.width = `${widthPicture}px`;
+    object.style.height = `${heightPicture}px`;
+
     object.style.left = `${
-      windowWidth + RADIUSX * Math.cos(ALPHA_ANGLE * arrayCords[i])
+      centerX -
+      widthHalfElement +
+      radiusX * Math.cos(ALPHA_ANGLE * timeArray[i])
     }px`;
     object.style.top = `${
-      RADIUS_Y + RADIUS_Y * Math.sin(-ALPHA_ANGLE * arrayCords[i])
+      centerY + heightPicture + radiusY * Math.sin(-ALPHA_ANGLE * timeArray[i])
     }px`;
-    if (!isResize) addImgToCont(object);
+    addImgToCont(object);
   });
 
-  let volumeElement = container.querySelector(".volumeElem");
-  volumeElement.style.width = `${window.innerWidth + 100}px`;
+  notVisibleElem.addEventListener("scroll", function () {
+    let direction = -1;
+    if (notVisibleElem.scrollTop > SCROLL_START_POSITION) direction = 1;
+    notVisibleElem.scrollTop = SCROLL_START_POSITION;
+    if (!isFinishReplacement) return;
+
+    if (direction == -1 && positionNow === 0) return;
+
+    isFinishReplacement = false;
+
+    setTimeout(() => addPoz(direction), SCROLL_INTERVAL);
+  });
 }
 
-function createArrayCords(isResize) {
-  if (galleryContainers === null) {
-    galleryContainers = container.querySelectorAll(".element");
-  }
+function createTime() {
+  const galleryContainers = container.querySelectorAll(".element");
 
-  const arrayCords = [];
+  const time = [];
 
   galleryContainers.forEach((elem, i) => {
-    arrayCords[i] = [START_TIME + i * FIX_DISTANCE_PICTURES];
-    if (!isResize) arrayContainers[i] = elem;
+    time[i] = [START_TIME + i * FIX_DISTANCE_PICTURES];
+    arrayContainers[i] = elem;
   });
 
-  return arrayCords;
+  return time;
 }
 
-container.addEventListener("scroll", function () {
-  const isBack = container.scrollLeft < SCROLL_START_POSITION;
-  container.scrollLeft = SCROLL_START_POSITION;
-  if (isFinishReplacement) return;
-  if (!isBack && positionNow === 0) return;
-  if (!mouseOnContainer) return;
-  isFinishReplacement = true;
-  setTimeout(() => addPoz(isBack), 500);
-});
-
-window.addEventListener("resize", () => {
-  if (window.innerWidth < 800) {
-    RADIUSX = 500;
-    windowWidth = 800;
-    return;
-  }
-  RADIUSX = window.innerWidth - DISPLACEMENT_RADIUS_X;
-  windowWidth = window.innerWidth / 2;
-  printContainers(true);
-});
-
-container.addEventListener("mouseover", function (event) {
-  if (event.relatedTarget === null) {
-    mouseOnContainer = true;
-    return;
-  }
-  if (event.target === null) {
-    mouseOnContainer = false;
-    return;
-  }
-  const isParentGallery = event.target.closest(".galleryContainer");
-  const isParentGalleryRel = event.relatedTarget.closest(".galleryContainer");
-
-  if (isParentGallery && mouseOnContainer) {
-    return;
-  } else if (isParentGallery && !mouseOnContainer) mouseOnContainer = true;
-
-  if (isParentGalleryRel && isParentGallery) return;
-});
-
-container.addEventListener("mouseout", function (event) {
-  if (event.relatedTarget === null) {
-    mouseOnContainer = false;
-    return;
-  }
-  const isParentGalleryRel = event.relatedTarget.closest(".galleryContainer");
-  const isParentGallery = event.target.closest(".galleryContainer");
-
-  if (isParentGallery && !isParentGalleryRel) {
-    mouseOnContainer = false;
-    return;
-  }
-  if (isParentGallery && isParentGalleryRel) return;
-});
+function createDiv(className, container) {
+  const div = document.createElement("div");
+  div.className = className;
+  container.append(div);
+  return div;
+}
 
 printContainers();

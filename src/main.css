@@ -1,47 +1,53 @@
 body{
-    text-align: center;
+    border: 0px;
+    margin: 0px;
+    overflow: hidden;
 }
 .galleryContainer{
-    border: 5px solid red;
-    width:100%;
+    overflow: hidden;
+    width: 100%;
+    margin: 0px;
     height: 300px;
     background-color: wheat;
-    overflow-x : auto;
     position: relative; 
-    left:auto;
+    left: auto;
     display: inline-block;
+    text-align: center;
 }
-.galleryContainer::-webkit-scrollbar {
+.notVisibleElem::-webkit-scrollbar {
     width: 0px;
     background: transparent;
 }
+.notVisibleElem{
+    position: relative;
+    width: 100%;
+    height:302px;
+    overflow-y: auto;
+    z-index: 99;
+}
 .element{
-    left:400px;
-    top:400px;
+    left: 400px;
+    top: 400px;
     border-radius: 30px;
     width: 120px;
     height: 70px;
     position: absolute; 
     transition: left 1s ease, top 1s ease;
-    border:2px solid brown;
+    border: 2px solid brown;
 } 
 .volumeElem{
-    width: 2000px;
-    height: 100px;
-    background-color: wheat;
+    width: 100%;
+    height: 304px;
 }
 .imgContainer{
-    height:100%;
-    width:100%;
+    height: 100%;
+    width: 100%;
     border-radius: 30px;
-}
-.imgScreen{
-    height:100%;
-    width:100%;
 }
 .buttonReload{
     position: absolute;
-    left:0%;
-    top:0%;
+    left: 0%;
+    top: 0%;
     border-radius: 10px;
+    z-index: 100;
 }
