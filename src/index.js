@@ -1,3 +1,10 @@
+const STEP_TRANSITION = 5;
+const ALPHA_ANGLE = 2 * 3.14;
+const SCROLL_START_POSITION = 1;
+const START_TIME = 1304;
+const FIX_DISTANCE_PICTURES = 60;
+const MINIMAL_WINDOW_SIZE = 800;
+const SCROLL_INTERVAL = 500;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 
 async function fetchHandler() {
@@ -50,15 +57,6 @@ async function addImgToCont(elem) {
 }
 const container = document.getElementById("container");
 let notVisibleElem = null;
-
-const STEP_TRANSITION = 5;
-const ALPHA_ANGLE = 2 * 3.14;
-const SCROLL_START_POSITION = 1;
-const START_TIME = 1304;
-const FIX_DISTANCE_PICTURES = 60;
-const MINIMAL_WINDOW_SIZE = 800;
-const SCROLL_INTERVAL = 500;
-
 let positionNow = 0;
 let arrayContainers = [];
 let isFinishReplacement = true;
@@ -68,7 +66,7 @@ function addPoz(direction) {
   let lastElemLeft = null;
   let lastElemTop = null;
 
-  function hideLastElem(elem) {
+  function hideElem(elem) {
     elem.style.display = "none";
     elem.style.left = lastElemLeft;
     elem.style.top = lastElemTop;
@@ -88,23 +86,28 @@ function addPoz(direction) {
     lastElemTop = arrayContainers[0].style.top;
     for (let i = 0; i < arrayContainers.length; i++) {
       if (i === arrayContainers.length - 1) {
-        hideLastElem(arrayContainers[arrayContainers.length - 1]);
+        hideElem(arrayContainers[arrayContainers.length - 1]);
       } else {
-        arrayContainers[i].style.left = arrayContainers[i + 1].style.left;
-        arrayContainers[i].style.top = arrayContainers[i + 1].style.top;
+        const leftNextElement = arrayContainers[i + 1].style.left;
+        const topNextElement = arrayContainers[i + 1].style.top;
+        arrayContainers[i].style.left = leftNextElement;
+        arrayContainers[i].style.top = topNextElement;
       }
     }
   } else {
     positionNow--;
+
     lastElemLeft = arrayContainers[arrayContainers.length - 1].style.left;
     lastElemTop = arrayContainers[arrayContainers.length - 1].style.top;
 
     for (let i = arrayContainers.length - 1; i >= 0; i--) {
       if (i === 0) {
-        hideLastElem(arrayContainers[0]);
+        hideElem(arrayContainers[0]);
       } else {
-        arrayContainers[i].style.left = arrayContainers[i - 1].style.left;
-        arrayContainers[i].style.top = arrayContainers[i - 1].style.top;
+        const leftPrevElement = arrayContainers[i - 1].style.left;
+        const topPrevElement = arrayContainers[i - 1].style.top;
+        arrayContainers[i].style.left = leftPrevElement;
+        arrayContainers[i].style.top = topPrevElement;
       }
     }
   }
@@ -127,12 +130,11 @@ function printContainers() {
   if (windowSize < MINIMAL_WINDOW_SIZE) windowSize = MINIMAL_WINDOW_SIZE;
   const centerX = windowSize / 2;
   const centerY = container.getBoundingClientRect().height;
+  const radiusY = centerY;
   const widthPicture = windowSize / (arrayContainers.length + 1);
+  const widthHalfElement = widthPicture / 2;
   const heightPicture = (widthPicture / 3) * 2;
   const radiusX = widthPicture * 2 - centerX * 2;
-  const radiusY = centerY;
-  const widthHalfElement = widthPicture / 2;
-
   arrayContainers.forEach((object, i) => {
     timeArray[i] = timeArray[i] - STEP_TRANSITION;
 
