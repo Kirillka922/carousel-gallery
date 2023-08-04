@@ -1,5 +1,6 @@
+const PI = 3.14;
 const STEP_TRANSITION = 5;
-const ALPHA_ANGLE = 2 * 3.14;
+const ALPHA_ANGLE = 2 * PI;
 const SCROLL_START_POSITION = 1;
 const START_TIME = 1304;
 const FIX_DISTANCE_PICTURES = 60;
