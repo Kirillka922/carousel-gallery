@@ -1,8 +1,8 @@
 const STEP_TRANSITION = 5;
 const ALPHA_ANGLE = 2 * Math.PI.toFixed(2);
 const SCROLL_START_POSITION = 1;
-const START_TIME = 1304;
-const FIX_DISTANCE_PICTURES = 60;
+const START_TIME = 1241;
+const FIX_DISTANCE_PICTURES = 61;
 const MINIMAL_WINDOW_SIZE = 800;
 const SCROLL_INTERVAL = 500;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
@@ -19,6 +19,7 @@ async function fetchHandler() {
     console.log(error);
   }
 }
+
 function addLoading(elem) {
   function createImg(className, link, cont) {
     const img = document.createElement("img");
@@ -49,11 +50,12 @@ async function addImgToCont(elem) {
     button.addEventListener("click", addImgToCont.bind(null, elem), {
       once: true,
     });
-    elem.firstElementChild.src = "";
+
+    elem.querySelector("img").src = "";
     return;
   }
 
-  elem.firstElementChild.src = link;
+  elem.querySelector("img").src = link;
 }
 const container = document.getElementById("container");
 let notVisibleElem = null;
@@ -66,6 +68,35 @@ function addPoz(direction) {
   let lastElemLeft = null;
   let lastElemTop = null;
 
+  positionNow = positionNow + direction;
+
+  if (direction === 1) {
+    lastElemLeft = arrayContainers[0].style.left;
+    lastElemTop = arrayContainers[0].style.top;
+
+    for (let i = 0; i < arrayContainers.length; i++) {
+      if (i === arrayContainers.length - 1)
+        hideElem(arrayContainers[arrayContainers.length - 1]);
+      if (i !== arrayContainers.length - 1)
+        replacementElements(arrayContainers, i);
+    }
+  }
+  if (direction === -1) {
+    lastElemLeft = arrayContainers[arrayContainers.length - 1].style.left;
+    lastElemTop = arrayContainers[arrayContainers.length - 1].style.top;
+    for (let i = arrayContainers.length - 1; i >= 0; i--) {
+      if (i === 0) hideElem(arrayContainers[0]);
+      if (i !== 0) replacementElements(arrayContainers, i);
+    }
+  }
+
+  function replacementElements(mass, i) {
+    const leftPrevElement = mass[i + direction].style.left;
+    const topPrevElement = mass[i + direction].style.top;
+    arrayContainers[i].style.left = leftPrevElement;
+    arrayContainers[i].style.top = topPrevElement;
+  }
+
   function hideElem(elem) {
     elem.style.display = "none";
     elem.style.left = lastElemLeft;
@@ -75,66 +106,33 @@ function addPoz(direction) {
 
     setTimeout(() => {
       elem.style.display = "block";
-      if (direction === -1) arrayContainers.unshift(arrayContainers.pop());
-      if (direction === 1) arrayContainers.push(arrayContainers.shift());
+      if (direction === 1) arrayContainers.unshift(arrayContainers.pop());
+      if (direction === -1) arrayContainers.push(arrayContainers.shift());
+      isFinishReplacement = true;
     }, 500);
   }
-
-  if (direction === -1) {
-    positionNow++;
-    lastElemLeft = arrayContainers[0].style.left;
-    lastElemTop = arrayContainers[0].style.top;
-    for (let i = 0; i < arrayContainers.length; i++) {
-      if (i === arrayContainers.length - 1) {
-        hideElem(arrayContainers[arrayContainers.length - 1]);
-      } else {
-        const leftNextElement = arrayContainers[i + 1].style.left;
-        const topNextElement = arrayContainers[i + 1].style.top;
-        arrayContainers[i].style.left = leftNextElement;
-        arrayContainers[i].style.top = topNextElement;
-      }
-    }
-  } else {
-    positionNow--;
-
-    lastElemLeft = arrayContainers[arrayContainers.length - 1].style.left;
-    lastElemTop = arrayContainers[arrayContainers.length - 1].style.top;
-
-    for (let i = arrayContainers.length - 1; i >= 0; i--) {
-      if (i === 0) {
-        hideElem(arrayContainers[0]);
-      } else {
-        const leftPrevElement = arrayContainers[i - 1].style.left;
-        const topPrevElement = arrayContainers[i - 1].style.top;
-        arrayContainers[i].style.left = leftPrevElement;
-        arrayContainers[i].style.top = topPrevElement;
-      }
-    }
-  }
-
-  isFinishReplacement = true;
 }
 
 function printContainers() {
-  for (let i = 0; i < 7; i++) {
-    createDiv("element", container);
-  }
-
-  notVisibleElem = createDiv("notVisibleElem", container);
-  createDiv("volumeElem", notVisibleElem);
-
-  notVisibleElem.scrollTop = SCROLL_START_POSITION;
-  const timeArray = createTime();
-
   let windowSize = container.getBoundingClientRect().width;
   if (windowSize < MINIMAL_WINDOW_SIZE) windowSize = MINIMAL_WINDOW_SIZE;
+
+  for (let i = 0; i < 9; i++) {
+    const contForPicture = createDiv("element", container);
+    arrayContainers[i] = contForPicture;
+  }
+  createNotVisibleElem("notVisibleElem");
+
+  const timeArray = createTime(arrayContainers.length);
+
   const centerX = windowSize / 2;
   const centerY = container.getBoundingClientRect().height;
-  const radiusY = centerY;
   const widthPicture = windowSize / (arrayContainers.length + 1);
-  const widthHalfElement = widthPicture / 2;
   const heightPicture = (widthPicture / 3) * 2;
+  const widthHalfElement = widthPicture / 2;
+  const radiusY = centerY - heightPicture;
   const radiusX = widthPicture * 2 - centerX * 2;
+
   arrayContainers.forEach((object, i) => {
     timeArray[i] = timeArray[i] - STEP_TRANSITION;
 
@@ -149,33 +147,34 @@ function printContainers() {
     object.style.top = `${
       centerY + heightPicture + radiusY * Math.sin(-ALPHA_ANGLE * timeArray[i])
     }px`;
-    addImgToCont(object);
+
+    if (i !== 0) addImgToCont(object);
   });
 
-  notVisibleElem.addEventListener("scroll", function () {
-    let direction = -1;
-    if (notVisibleElem.scrollTop > SCROLL_START_POSITION) direction = 1;
-    notVisibleElem.scrollTop = SCROLL_START_POSITION;
+  notVisibleElem.scrollTop = SCROLL_START_POSITION;
+  addEventScroll(notVisibleElem);
+}
+
+function addEventScroll(object) {
+  object.addEventListener("scroll", function () {
+    let direction = 1;
+    if (object.scrollTop > SCROLL_START_POSITION) direction = -1;
+    object.scrollTop = SCROLL_START_POSITION;
     if (!isFinishReplacement) return;
 
-    if (direction == -1 && positionNow === 0) return;
+    if (direction == 1 && positionNow === 0) return;
 
     isFinishReplacement = false;
 
-    setTimeout(() => addPoz(direction), SCROLL_INTERVAL);
+    addPoz(direction);
   });
 }
 
-function createTime() {
-  const galleryContainers = container.querySelectorAll(".element");
-
+function createTime(length) {
   const time = [];
-
-  galleryContainers.forEach((elem, i) => {
+  for (let i = 0; i < length; i++) {
     time[i] = [START_TIME + i * FIX_DISTANCE_PICTURES];
-    arrayContainers[i] = elem;
-  });
-
+  }
   return time;
 }
 
@@ -184,6 +183,13 @@ function createDiv(className, container) {
   div.className = className;
   container.append(div);
   return div;
+}
+
+function createNotVisibleElem(className) {
+  notVisibleElem = createDiv(className, container);
+  notVisibleElem.style.height = `${window.innerHeight}px`;
+  const volumeElem = createDiv("volumeElem", notVisibleElem);
+  volumeElem.style.height = `${window.innerHeight + 3}px`;
 }
 
 printContainers();
