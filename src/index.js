@@ -1,11 +1,14 @@
-const STEP_TRANSITION = 5;
-const ALPHA_ANGLE = 2 * Math.PI.toFixed(2);
-const SCROLL_START_POSITION = 1;
-const START_TIME = 1241;
-const FIX_DISTANCE_PICTURES = 61;
-const MINIMAL_WINDOW_SIZE = 800;
-const SCROLL_INTERVAL = 500;
+import loadImage from "../src/images/gufde.gif";
+const THROTTLE_TIME = 500;
+const LOADED_ELEMENTS = 8;
+const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
+const container = document.getElementById("container");
+const arrayContainers = [];
+const linkBase = [];
+let widthPicture = 0;
+let positionNow = 0;
+let throttleTimer = null;
 
 async function fetchHandler() {
   try {
@@ -16,180 +19,160 @@ async function fetchHandler() {
     const blob = await dataLink.blob();
     return URL.createObjectURL(blob);
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
-function addLoading(elem) {
-  function createImg(className, link, cont) {
-    const img = document.createElement("img");
-    img.className = className;
-    img.setAttribute("src", link);
-    cont.append(img);
-  }
-  if (elem.childNodes.length > 0) {
-    elem.innerHTML = "";
-  }
-  createImg(
-    "imgContainer",
-    "https://otkritkis.com/wp-content/uploads/2022/07/gufde.gif",
-    elem
-  );
-}
-
-async function addImgToCont(elem) {
-  addLoading(elem);
-
-  let link = await fetchHandler();
-  if (link === undefined) {
-    const button = document.createElement("button");
-    button.className = "buttonReload";
-    elem.append(button);
-    let textNode = document.createTextNode("Try again");
-    button.append(textNode);
-    button.addEventListener("click", addImgToCont.bind(null, elem), {
-      once: true,
-    });
-
-    elem.querySelector("img").src = "";
+async function addImg(elem, i) {
+  if (linkBase[i] !== undefined) {
+    const newImg = createElem("imgContainer", elem, "img");
+    newImg.src = linkBase[i];
     return;
   }
 
-  elem.querySelector("img").src = link;
-}
-const container = document.getElementById("container");
-let notVisibleElem = null;
-let positionNow = 0;
-let arrayContainers = [];
-let isFinishReplacement = true;
+  elem.classList.add("addLoading");
 
-function addPoz(direction) {
-  notVisibleElem.scrollTop = SCROLL_START_POSITION;
-  let lastElemLeft = null;
-  let lastElemTop = null;
+  let linkPicture = await fetchHandler();
+
+  if (linkPicture === undefined) {
+    elem.classList.remove("addLoading");
+    elem.innerHTML = "";
+    const button = createElem("buttonReload", elem, "button");
+    let textNode = document.createTextNode("Try again");
+    button.append(textNode);
+    button.addEventListener("click", () => addImg(elem, i), {
+      once: true,
+    });
+    return;
+  }
+  elem.classList.remove("addLoading");
+  elem.innerHTML = "";
+  const newImg = createElem("imgContainer", elem, "img");
+  linkBase[i] = linkPicture;
+  newImg.src = linkPicture;
+}
+
+function scrollGallery(direction) {
+  let lastElementPosition = 0;
+  let numberElemForTransition = 0;
 
   positionNow = positionNow + direction;
+  let positionContForPic = positionNow;
 
-  if (direction === 1) {
-    lastElemLeft = arrayContainers[0].style.left;
-    lastElemTop = arrayContainers[0].style.top;
+  if (direction === 1) lastElementPosition = arrayContainers.length - 1;
+  if (direction !== 1) numberElemForTransition = arrayContainers.length - 1;
+  if (direction === 1)
+    positionContForPic = positionContForPic + LOADED_ELEMENTS;
 
-    for (let i = 0; i < arrayContainers.length; i++) {
-      if (i === arrayContainers.length - 1)
-        hideElem(arrayContainers[arrayContainers.length - 1]);
-      if (i !== arrayContainers.length - 1)
-        replacementElements(arrayContainers, i);
-    }
-  }
+  const lastElemLeft = arrayContainers[lastElementPosition].style.left;
+  const lastElemTop = arrayContainers[lastElementPosition].style.top;
+
   if (direction === -1) {
-    lastElemLeft = arrayContainers[arrayContainers.length - 1].style.left;
-    lastElemTop = arrayContainers[arrayContainers.length - 1].style.top;
+    for (let i = 0; i < arrayContainers.length; i++) {
+      replacementElements(i);
+    }
+  }
+  if (direction === 1) {
     for (let i = arrayContainers.length - 1; i >= 0; i--) {
-      if (i === 0) hideElem(arrayContainers[0]);
-      if (i !== 0) replacementElements(arrayContainers, i);
+      replacementElements(i);
     }
   }
 
-  function replacementElements(mass, i) {
-    const leftPrevElement = mass[i + direction].style.left;
-    const topPrevElement = mass[i + direction].style.top;
+  function replacementElements(i) {
+    if (i === numberElemForTransition) {
+      arrayContainers[numberElemForTransition].remove();
+      let newElemForPic = createHiddenElem(
+        direction,
+        lastElemLeft,
+        lastElemTop
+      );
+
+      addImg(newElemForPic, positionContForPic);
+    }
+    if (i !== numberElemForTransition) replacementMiddleElements(i);
+  }
+
+  function replacementMiddleElements(i) {
+    const leftPrevElement = arrayContainers[i - direction].style.left;
+    const topPrevElement = arrayContainers[i - direction].style.top;
     arrayContainers[i].style.left = leftPrevElement;
     arrayContainers[i].style.top = topPrevElement;
   }
+}
 
-  function hideElem(elem) {
-    elem.style.display = "none";
-    elem.style.left = lastElemLeft;
-    elem.style.top = lastElemTop;
+function createHiddenElem(direction, lastElemLeft, lastElemTop) {
+  const newElem = createElem("element", container, "div");
+  newElem.style.left = lastElemLeft;
+  newElem.style.top = lastElemTop;
+  newElem.style.width = `${widthPicture}px`;
+  newElem.style.height = `${(widthPicture / 3) * 2}px`;
 
-    addImgToCont(elem);
-
-    setTimeout(() => {
-      elem.style.display = "block";
-      if (direction === 1) arrayContainers.unshift(arrayContainers.pop());
-      if (direction === -1) arrayContainers.push(arrayContainers.shift());
-      isFinishReplacement = true;
-    }, 500);
+  if (direction === -1) {
+    arrayContainers.pop();
+    arrayContainers.unshift(newElem);
   }
+
+  if (direction === 1) {
+    arrayContainers.shift();
+    arrayContainers.push(newElem);
+  }
+
+  return newElem;
 }
 
 function printContainers() {
-  let windowSize = container.getBoundingClientRect().width;
-  if (windowSize < MINIMAL_WINDOW_SIZE) windowSize = MINIMAL_WINDOW_SIZE;
+  let currentAngle = 0;
+  const widthCont = window.innerWidth;
+  const heightCont = window.innerHeight;
 
-  for (let i = 0; i < 9; i++) {
-    const contForPicture = createDiv("element", container);
+  container.style.width = `${widthCont}px`;
+  container.style.height = `${heightCont}px`;
+
+  widthPicture = widthCont / AMOUNT_OF_CONTAINERS;
+  const heightPicture = (widthPicture / 3) * 2;
+  const radius = widthCont / 2 - widthPicture / 2;
+
+  for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
+    const contForPicture = createElem("element", container, "div");
+
+    currentAngle -= 0.314;
+    contForPicture.style.width = `${widthPicture}px`;
+    contForPicture.style.height = `${heightPicture}px`;
+
+    contForPicture.style.left = `${Math.cos(currentAngle) * radius + radius}px`;
+    contForPicture.style.top = `${
+      Math.sin(currentAngle) * radius + heightCont + heightPicture * 2
+    }px`;
+
     arrayContainers[i] = contForPicture;
   }
-  createNotVisibleElem("notVisibleElem");
-
-  const timeArray = createTime(arrayContainers.length);
-
-  const centerX = windowSize / 2;
-  const centerY = container.getBoundingClientRect().height;
-  const widthPicture = windowSize / (arrayContainers.length + 1);
-  const heightPicture = (widthPicture / 3) * 2;
-  const widthHalfElement = widthPicture / 2;
-  const radiusY = centerY - heightPicture;
-  const radiusX = widthPicture * 2 - centerX * 2;
-
-  arrayContainers.forEach((object, i) => {
-    timeArray[i] = timeArray[i] - STEP_TRANSITION;
-
-    object.style.width = `${widthPicture}px`;
-    object.style.height = `${heightPicture}px`;
-
-    object.style.left = `${
-      centerX -
-      widthHalfElement +
-      radiusX * Math.cos(ALPHA_ANGLE * timeArray[i])
-    }px`;
-    object.style.top = `${
-      centerY + heightPicture + radiusY * Math.sin(-ALPHA_ANGLE * timeArray[i])
-    }px`;
-
-    if (i !== 0) addImgToCont(object);
-  });
-
-  notVisibleElem.scrollTop = SCROLL_START_POSITION;
-  addEventScroll(notVisibleElem);
-}
-
-function addEventScroll(object) {
-  object.addEventListener("scroll", function () {
-    let direction = 1;
-    if (object.scrollTop > SCROLL_START_POSITION) direction = -1;
-    object.scrollTop = SCROLL_START_POSITION;
-    if (!isFinishReplacement) return;
-
-    if (direction == 1 && positionNow === 0) return;
-
-    isFinishReplacement = false;
-
-    addPoz(direction);
-  });
-}
-
-function createTime(length) {
-  const time = [];
-  for (let i = 0; i < length; i++) {
-    time[i] = [START_TIME + i * FIX_DISTANCE_PICTURES];
+  for (let i = 1; i < AMOUNT_OF_CONTAINERS; i++) {
+    addImg(arrayContainers[i], i);
   }
-  return time;
 }
 
-function createDiv(className, container) {
-  const div = document.createElement("div");
-  div.className = className;
-  container.append(div);
-  return div;
+container.addEventListener("wheel", function (e) {
+  let direction = -1;
+  if (e.deltaY < 0) direction = 1;
+  if (direction == -1 && positionNow === 0) return;
+
+  throttle(() => scrollGallery(direction));
+});
+
+function createElem(className, container, tag) {
+  const elem = document.createElement(tag);
+  elem.className = className;
+  container.append(elem);
+  return elem;
 }
 
-function createNotVisibleElem(className) {
-  notVisibleElem = createDiv(className, container);
-  notVisibleElem.style.height = `${window.innerHeight}px`;
-  const volumeElem = createDiv("volumeElem", notVisibleElem);
-  volumeElem.style.height = `${window.innerHeight + 3}px`;
-}
+const throttle = (callback, time) => {
+  if (throttleTimer) return;
+  callback();
+  throttleTimer = true;
+  setTimeout(() => {
+    throttleTimer = false;
+  }, THROTTLE_TIME);
+};
 
 printContainers();

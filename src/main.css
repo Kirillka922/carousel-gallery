@@ -5,26 +5,22 @@ body{
 }
 .galleryContainer{
     overflow: hidden;
-    width: 100%;
+    width: 0px;
     margin: 0px;
-    height: 100%;
-    background-color: wheat;
+    height: 0px;
+    background-color: rgb(245, 229, 199);
     position: relative; 
     left: auto;
     display: inline-block;
     text-align: center;
 }
-.notVisibleElem::-webkit-scrollbar {
-    width: 0px;
-    background: transparent;
-}
-.notVisibleElem{
-    position: relative;
-    width: 100%;
-    overflow-y: auto;
-    z-index: 1;
+.addLoading{
+    background-image: url('f62031aeaa49e1b31024.gif');
+    background-size: contain;
+    background-repeat: no-repeat;
 }
 .element{
+    overflow: hidden;
     left: 400px;
     top: 400px;
     border-radius: 30px;
@@ -32,15 +28,16 @@ body{
     height: 70px;
     position: absolute; 
     transition: left 1s ease, top 1s ease;
-    border: 2px solid brown;
+    border: 1px solid rgb(255, 255, 255);
+    object-fit: contain;
+    background-color: gray;
 } 
-.volumeElem{
-    width: 100%;
-}
+
 .imgContainer{
+   
     height: 100%;
-    width: 100%;
-    border-radius: 30px;
+    border-radius: 3px;
+    
 }
 .buttonReload{
     position: absolute;
@@ -49,3 +46,4 @@ body{
     border-radius: 10px;
     z-index: 2;
 }
+

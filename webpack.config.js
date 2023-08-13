@@ -5,7 +5,7 @@ const devMode = mode === "development";
 const devtool = devMode ? "source-map" : undefined;
 
 module.exports = {
-  mode,
+  mode: "development",
   devtool,
   entry: path.resolve(__dirname, "src", "index.js"),
   output: {
@@ -24,6 +24,15 @@ module.exports = {
         test: /\.html$/i,
         loader: "html-loader",
       },
+      {
+        test: /\.(gif|png|jpeg|svg|jpg)$/i,
+        type: "asset/resource",
+      },
     ],
+  },
+  devServer: {
+    port: 8090,
+    static: "./dist",
+    hot: true,
   },
 };
