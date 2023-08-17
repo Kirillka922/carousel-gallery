@@ -5,9 +5,7 @@ body{
 }
 .galleryContainer{
     overflow: hidden;
-    width: 0px;
     margin: 0px;
-    height: 0px;
     background-color: rgb(245, 229, 199);
     position: relative; 
     left: auto;
@@ -15,7 +13,7 @@ body{
     text-align: center;
 }
 .addLoading{
-    background-image: url('f62031aeaa49e1b31024.gif');
+    background-image: url('./images/gufde.gif');
     background-size: contain;
     background-repeat: no-repeat;
 }
@@ -41,6 +39,5 @@ body{
     left: 0%;
     top: 0%;
     border-radius: 10px;
-    z-index: 2;
 }
 

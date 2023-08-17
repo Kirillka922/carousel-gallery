@@ -1,38 +1,37 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const mode = process.env.NODE_ENV || "development";
-const devMode = mode === "development";
-const devtool = devMode ? "source-map" : undefined;
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
-  mode: "development",
-  devtool,
+  mode,
+  devServer: {
+    port: 8090,
+    static: "./dist",
+    hot: true,
+  },
   entry: path.resolve(__dirname, "src", "index.js"),
   output: {
     path: path.resolve(__dirname, "dist"),
     clean: true,
     filename: "index.js",
+    assetModuleFilename: "assets/[name][ext]",
   },
+
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "src", "index.html"),
+    }),
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
     }),
   ],
   module: {
     rules: [
       {
-        test: /\.html$/i,
-        loader: "html-loader",
-      },
-      {
-        test: /\.(gif|png|jpeg|svg|jpg)$/i,
-        type: "asset/resource",
+        test: /\.css$/i,
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
       },
     ],
-  },
-  devServer: {
-    port: 8090,
-    static: "./dist",
-    hot: true,
   },
 };

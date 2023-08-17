@@ -1,4 +1,4 @@
-import loadImage from "../src/images/gufde.gif";
+import "./main.css";
 const THROTTLE_TIME = 500;
 const LOADED_ELEMENTS = 8;
 const AMOUNT_OF_CONTAINERS = 9;
@@ -8,7 +8,6 @@ const arrayContainers = [];
 const linkBase = [];
 let widthPicture = 0;
 let positionNow = 0;
-let throttleTimer = null;
 
 async function fetchHandler() {
   try {
@@ -23,10 +22,10 @@ async function fetchHandler() {
   }
 }
 
-async function addImg(elem, i) {
-  if (linkBase[i] !== undefined) {
-    const newImg = createElem("imgContainer", elem, "img");
-    newImg.src = linkBase[i];
+async function addImg(elem, positionPicture) {
+  if (linkBase[positionPicture] !== undefined) {
+    const newImg = createElem("img", "imgContainer", elem);
+    newImg.src = linkBase[positionPicture];
     return;
   }
 
@@ -37,30 +36,30 @@ async function addImg(elem, i) {
   if (linkPicture === undefined) {
     elem.classList.remove("addLoading");
     elem.innerHTML = "";
-    const button = createElem("buttonReload", elem, "button");
+    const button = createElem("button", "buttonReload", elem);
     let textNode = document.createTextNode("Try again");
     button.append(textNode);
-    button.addEventListener("click", () => addImg(elem, i), {
+    button.addEventListener("click", () => addImg(elem, positionPicture), {
       once: true,
     });
     return;
   }
   elem.classList.remove("addLoading");
   elem.innerHTML = "";
-  const newImg = createElem("imgContainer", elem, "img");
-  linkBase[i] = linkPicture;
+  const newImg = createElem("img", "imgContainer", elem);
+  linkBase[positionPicture] = linkPicture;
   newImg.src = linkPicture;
 }
 
 function scrollGallery(direction) {
   let lastElementPosition = 0;
-  let numberElemForTransition = 0;
+  let positionElemForTransition = 0;
 
   positionNow = positionNow + direction;
   let positionContForPic = positionNow;
 
   if (direction === 1) lastElementPosition = arrayContainers.length - 1;
-  if (direction !== 1) numberElemForTransition = arrayContainers.length - 1;
+  if (direction !== 1) positionElemForTransition = arrayContainers.length - 1;
   if (direction === 1)
     positionContForPic = positionContForPic + LOADED_ELEMENTS;
 
@@ -79,8 +78,8 @@ function scrollGallery(direction) {
   }
 
   function replacementElements(i) {
-    if (i === numberElemForTransition) {
-      arrayContainers[numberElemForTransition].remove();
+    if (i === positionElemForTransition) {
+      arrayContainers[positionElemForTransition].remove();
       let newElemForPic = createHiddenElem(
         direction,
         lastElemLeft,
@@ -89,7 +88,7 @@ function scrollGallery(direction) {
 
       addImg(newElemForPic, positionContForPic);
     }
-    if (i !== numberElemForTransition) replacementMiddleElements(i);
+    if (i !== positionElemForTransition) replacementMiddleElements(i);
   }
 
   function replacementMiddleElements(i) {
@@ -101,7 +100,7 @@ function scrollGallery(direction) {
 }
 
 function createHiddenElem(direction, lastElemLeft, lastElemTop) {
-  const newElem = createElem("element", container, "div");
+  const newElem = createElem("div", "element", container);
   newElem.style.left = lastElemLeft;
   newElem.style.top = lastElemTop;
   newElem.style.width = `${widthPicture}px`;
@@ -133,7 +132,7 @@ function printContainers() {
   const radius = widthCont / 2 - widthPicture / 2;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const contForPicture = createElem("element", container, "div");
+    const contForPicture = createElem("div", "element", container);
 
     currentAngle -= 0.314;
     contForPicture.style.width = `${widthPicture}px`;
@@ -156,23 +155,32 @@ container.addEventListener("wheel", function (e) {
   if (e.deltaY < 0) direction = 1;
   if (direction == -1 && positionNow === 0) return;
 
-  throttle(() => scrollGallery(direction));
+  scrollGallery(direction);
 });
 
-function createElem(className, container, tag) {
+function throttle(callback, time) {
+  let isThrottled = false;
+
+  function wrapper() {
+    if (isThrottled) {
+      return;
+    }
+    callback.apply(this, arguments);
+    isThrottled = true;
+    setTimeout(function () {
+      isThrottled = false;
+    }, time);
+  }
+  return wrapper;
+}
+
+function createElem(tag, className, container) {
   const elem = document.createElement(tag);
   elem.className = className;
   container.append(elem);
   return elem;
 }
 
-const throttle = (callback, time) => {
-  if (throttleTimer) return;
-  callback();
-  throttleTimer = true;
-  setTimeout(() => {
-    throttleTimer = false;
-  }, THROTTLE_TIME);
-};
+scrollGallery = throttle(scrollGallery, THROTTLE_TIME);
 
 printContainers();
