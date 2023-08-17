@@ -4,7 +4,6 @@ const LOADED_ELEMENTS = 8;
 const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 const container = document.getElementById("container");
-const arrayContainers = [];
 const linkBase = [];
 let widthPicture = 0;
 let positionNow = 0;
@@ -52,71 +51,58 @@ async function addImg(elem, positionPicture) {
 }
 
 function scrollGallery(direction) {
+  const galleryContainers = container.querySelectorAll(".element");
   let lastElementPosition = 0;
   let positionElemForTransition = 0;
 
   positionNow = positionNow + direction;
   let positionContForPic = positionNow;
 
-  if (direction === 1) lastElementPosition = arrayContainers.length - 1;
-  if (direction !== 1) positionElemForTransition = arrayContainers.length - 1;
-  if (direction === 1)
-    positionContForPic = positionContForPic + LOADED_ELEMENTS;
-
-  const lastElemLeft = arrayContainers[lastElementPosition].style.left;
-  const lastElemTop = arrayContainers[lastElementPosition].style.top;
-
-  if (direction === -1) {
-    for (let i = 0; i < arrayContainers.length; i++) {
-      replacementElements(i);
-    }
-  }
   if (direction === 1) {
-    for (let i = arrayContainers.length - 1; i >= 0; i--) {
-      replacementElements(i);
-    }
+    lastElementPosition = AMOUNT_OF_CONTAINERS - 1;
+    positionContForPic = positionContForPic + LOADED_ELEMENTS;
+  } else {
+    positionElemForTransition = AMOUNT_OF_CONTAINERS - 1;
+  }
+  const lastElement = galleryContainers[lastElementPosition];
+  const lastElemLeft = lastElement.style.left;
+  const lastElemTop = lastElement.style.top;
+
+  let index = 0;
+
+  for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
+    if (direction === -1)
+      changePositionElement(Math.abs(index), galleryContainers);
+
+    index = index + direction;
+    if (direction === 1)
+      changePositionElement(AMOUNT_OF_CONTAINERS - index, galleryContainers);
   }
 
-  function replacementElements(i) {
-    if (i === positionElemForTransition) {
-      arrayContainers[positionElemForTransition].remove();
-      let newElemForPic = createHiddenElem(
-        direction,
+  function changePositionElement(positionElement, galleryContainers) {
+    if (positionElement === positionElemForTransition) {
+      galleryContainers[positionElemForTransition].remove();
+
+      const newContainer = createElem(
+        "div",
+        "element",
+        container,
         lastElemLeft,
         lastElemTop
       );
+      addContainer(newContainer, direction);
+      addImg(newContainer, positionContForPic);
 
-      addImg(newElemForPic, positionContForPic);
+      return;
     }
-    if (i !== positionElemForTransition) replacementMiddleElements(i);
+    const prevElement = galleryContainers[positionElement - direction];
+    const leftPrevElement = prevElement.style.left;
+    const topPrevElement = prevElement.style.top;
+    const nextElement = galleryContainers[positionElement];
+
+    nextElement.style.left = leftPrevElement;
+    nextElement.style.top = topPrevElement;
   }
-
-  function replacementMiddleElements(i) {
-    const leftPrevElement = arrayContainers[i - direction].style.left;
-    const topPrevElement = arrayContainers[i - direction].style.top;
-    arrayContainers[i].style.left = leftPrevElement;
-    arrayContainers[i].style.top = topPrevElement;
-  }
-}
-
-function createHiddenElem(direction, lastElemLeft, lastElemTop) {
-  const newElem = createElem("div", "element", container);
-  newElem.style.left = lastElemLeft;
-  newElem.style.top = lastElemTop;
-  newElem.style.width = `${widthPicture}px`;
-  newElem.style.height = `${(widthPicture / 3) * 2}px`;
-
-  if (direction === -1) {
-    arrayContainers.pop();
-    arrayContainers.unshift(newElem);
-  }
-
-  if (direction === 1) {
-    arrayContainers.shift();
-    arrayContainers.push(newElem);
-  }
-
-  return newElem;
 }
 
 function printContainers() {
@@ -132,27 +118,27 @@ function printContainers() {
   const radius = widthCont / 2 - widthPicture / 2;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const contForPicture = createElem("div", "element", container);
+    const newContainer = createElem("div", "element", container);
 
     currentAngle -= 0.314;
-    contForPicture.style.width = `${widthPicture}px`;
-    contForPicture.style.height = `${heightPicture}px`;
+    newContainer.style.width = `${widthPicture}px`;
+    newContainer.style.height = `${heightPicture}px`;
 
-    contForPicture.style.left = `${Math.cos(currentAngle) * radius + radius}px`;
-    contForPicture.style.top = `${
+    newContainer.style.left = `${Math.cos(currentAngle) * radius + radius}px`;
+    newContainer.style.top = `${
       Math.sin(currentAngle) * radius + heightCont + heightPicture * 2
     }px`;
-
-    arrayContainers[i] = contForPicture;
-  }
-  for (let i = 1; i < AMOUNT_OF_CONTAINERS; i++) {
-    addImg(arrayContainers[i], i);
+    addImg(newContainer, i);
   }
 }
 
+function addContainer(newContainer, direction) {
+  if (direction === -1) container.prepend(newContainer);
+  if (direction === 1) container.append(newContainer);
+}
+
 container.addEventListener("wheel", function (e) {
-  let direction = -1;
-  if (e.deltaY < 0) direction = 1;
+  let direction = Math.sign(e.deltaY);
   if (direction == -1 && positionNow === 0) return;
 
   scrollGallery(direction);
@@ -174,10 +160,23 @@ function throttle(callback, time) {
   return wrapper;
 }
 
-function createElem(tag, className, container) {
+function createElem(
+  tag,
+  className,
+  container,
+  lastElemLeft = null,
+  lastElemTop = null
+) {
   const elem = document.createElement(tag);
   elem.className = className;
   container.append(elem);
+
+  if (lastElemLeft && lastElemTop) {
+    elem.style.left = lastElemLeft;
+    elem.style.top = lastElemTop;
+    elem.style.width = `${widthPicture}px`;
+    elem.style.height = `${(widthPicture / 3) * 2}px`;
+  }
   return elem;
 }
 
