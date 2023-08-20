@@ -6,38 +6,38 @@ body{
 .galleryContainer{
     overflow: hidden;
     margin: 0px;
+    width: 100%;
+    height: 100%;
     background-color: rgb(245, 229, 199);
-    position: relative; 
+    position: absolute; 
     left: auto;
     display: inline-block;
     text-align: center;
 }
-.addLoading{
+.loadingImg{
     background-image: url('./images/gufde.gif');
-    background-size: contain;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
 }
 .element{
     overflow: hidden;
-    left: 400px;
-    top: 400px;
     border-radius: 30px;
-    width: 120px;
-    height: 70px;
     position: absolute; 
     transition: left 1s ease, top 1s ease;
     border: 1px solid rgb(255, 255, 255);
     object-fit: contain;
     background-color: gray;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 } 
 .imgContainer{
     height: 100%;
     border-radius: 3px;
 }
 .buttonReload{
-    position: absolute;
-    left: 0%;
-    top: 0%;
+    position: relative;
+    height: 30%;
     border-radius: 10px;
 }
 
