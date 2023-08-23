@@ -1,7 +1,6 @@
 import "./main.css";
 const THROTTLE_TIME = 500;
 const HALF_CIRCLE = 180;
-const TIMEOUT_LOADING = 3000;
 const LOADED_ELEMENTS = 8;
 const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
@@ -12,39 +11,47 @@ let positionNow = 0;
 
 async function fetchHandler() {
   try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), TIMEOUT_LOADING);
-    const response = await fetch(url, {
-      signal: controller.signal,
-    });
-
+    const response = await fetch(url);
     const data = await response.json();
-    const link = data.drinks[0].strDrinkThumb;
-    setTimeout(() => controller.abort(), TIMEOUT_LOADING);
-    const response1 = await fetch(link, {
-      signal: controller.signal,
-    });
-
-    const blob = await response1.blob();
-    return checkImg(URL.createObjectURL(blob));
-  } catch (err) {
-    if (err.name == "AbortError") {
-      console.log("Загрузка остановлена! Повторите загрузку позже");
-    } else {
-      console.error(err);
+    if (response.status !== 200) {
+      return new Error("Server Error");
     }
+    const link = data.drinks[0].strDrinkThumb;
+
+    const nestedResponse = await fetch(link);
+    if (nestedResponse.status !== 200) {
+      return new Error("Server Error");
+    }
+    const blob = await nestedResponse.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const blobResponse = await fetch(blobUrl);
+
+    if (blobResponse.status !== 200) {
+      URL.revokeObjectURL(blobUrl);
+      return new Error("was created not correct Blob link");
+    }
+    return checkLink(blobUrl);
+  } catch (err) {
+    console.error(err);
+    return undefined;
   }
 }
+
 function runGallery() {
   printContainers();
 
-  scrollGallery = throttle(scrollGallery, THROTTLE_TIME);
+  const trScrollGallery = throttle(
+    (direction) => scrollGallery(direction),
+    THROTTLE_TIME
+  );
 
   container.addEventListener("wheel", function (e) {
+    if (e.deltaX !== 0) return;
+
     let direction = Math.sign(e.deltaY);
     if (direction == -1 && positionNow === 0) return;
 
-    scrollGallery(direction);
+    trScrollGallery(direction);
   });
 }
 
@@ -73,8 +80,8 @@ function printContainers() {
 
 function scrollGallery(direction) {
   const galleryContainers = container.querySelectorAll(".element");
-  let lastElementPosition = 0;
-  let positionElemForTransition = 0;
+  let lastElementPosition = null;
+  let positionElemForTransition = null;
 
   positionNow = positionNow + direction;
   let newPositionId = positionNow;
@@ -82,17 +89,20 @@ function scrollGallery(direction) {
   if (direction === 1) {
     lastElementPosition = AMOUNT_OF_CONTAINERS - 1;
     newPositionId += LOADED_ELEMENTS;
+    positionElemForTransition = 0;
   } else {
+    lastElementPosition = 0;
     positionElemForTransition = AMOUNT_OF_CONTAINERS - 1;
   }
   const lastElement = galleryContainers[lastElementPosition];
   const lastElemLeft = lastElement.style.left;
   const lastElemTop = lastElement.style.top;
 
-  let index = 0;
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    direction === 1 ? (index = LOADED_ELEMENTS - i) : (index = i);
-    changePositionElement(index, galleryContainers);
+    changePositionElement(
+      direction === 1 ? LOADED_ELEMENTS - i : i,
+      galleryContainers
+    );
   }
 
   function changePositionElement(positionElement, galleryContainers) {
@@ -129,16 +139,14 @@ async function addImg(elem, positionPicture) {
 
   elem.classList.add("loadingImg");
   const response = await fetchHandler();
+  elem.classList.remove("loadingImg");
+  elem.innerHTML = "";
 
   if (response === undefined) {
-    elem.classList.remove("loadingImg");
-    elem.innerHTML = "";
     addButtonReload(elem, positionPicture);
     return;
   }
 
-  elem.classList.remove("loadingImg");
-  elem.innerHTML = "";
   const newImg = createElem("img", "imgContainer", elem);
   linkBase[positionPicture] = response;
   newImg.src = response;
@@ -188,17 +196,24 @@ function addButtonReload(elem, positionPicture) {
   );
 }
 
-function checkImg(url) {
+function checkLink(url) {
+  const heightPicture = (widthPicture / 3) * 2;
+
   return new Promise(function (resolve, reject) {
     const img = new Image();
     img.onload = function () {
-      resolve(url);
+      if (checkImg(img, heightPicture)) resolve(url);
     };
     img.onerror = function () {
-      reject(url);
+      reject(new Error("Img was not loaded!"));
     };
+
     img.src = url;
   });
+}
+
+function checkImg(img, heightPicture) {
+  if (img.complete && img.naturalHeight >= heightPicture) return true;
 }
 
 function throttle(callback, time) {
