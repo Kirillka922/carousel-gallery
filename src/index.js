@@ -213,7 +213,7 @@ function checkLink(url) {
 }
 
 function checkImg(img, heightPicture) {
-  if (img.complete && img.naturalHeight >= heightPicture) return true;
+  return img.complete && img.naturalHeight >= heightPicture;
 }
 
 function throttle(callback, time) {
