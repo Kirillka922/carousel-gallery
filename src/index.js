@@ -40,7 +40,7 @@ async function fetchHandler() {
 function runGallery() {
   printContainers();
 
-  const trScrollGallery = throttle(
+  const throttleScroll = throttle(
     (direction) => scrollGallery(direction),
     THROTTLE_TIME
   );
@@ -51,7 +51,7 @@ function runGallery() {
     let direction = Math.sign(e.deltaY);
     if (direction == -1 && positionNow === 0) return;
 
-    trScrollGallery(direction);
+    throttleScroll(direction);
   });
 }
 
