@@ -54,7 +54,11 @@ function getImg(url) {
     img.className = "imgContainer";
 
     img.onload = function () {
-      if (img.naturalHeight > 0) resolve(img);
+      if (img.naturalHeight > 0) {
+        resolve(img);
+      } else {
+        reject(new Error("Img was not loaded!"));
+      }
     };
     img.onerror = function () {
       reject(new Error("Img was not loaded!"));
