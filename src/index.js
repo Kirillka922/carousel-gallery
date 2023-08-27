@@ -1,40 +1,69 @@
 import "./main.css";
 const THROTTLE_TIME = 500;
 const HALF_CIRCLE = 180;
-const LOADED_ELEMENTS = 8;
+const VISIBLE_ELEMENTS = 8;
 const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 const container = document.getElementById("container");
 const linkBase = [];
+let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
 
-async function fetchHandler() {
+async function fetchHandler(positionPicture) {
   try {
-    const response = await fetch(url);
+    const randomNumber = new Date().getTime() + positionPicture;
+
+    const response = await fetch(`${url}?id=${randomNumber}`);
+    if (response.status !== 200) return new Error("Server Error!");
+
     const data = await response.json();
-    if (response.status !== 200) {
-      return new Error("Server Error");
-    }
     const link = data.drinks[0].strDrinkThumb;
+    let nestedResponse = await fetch(link);
 
-    const nestedResponse = await fetch(link);
-    if (nestedResponse.status !== 200) {
-      return new Error("Server Error");
-    }
+    if (nestedResponse.status !== 200) throw new Error("Server Error");
+
     const blob = await nestedResponse.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const blobResponse = await fetch(blobUrl);
-
-    if (blobResponse.status !== 200) {
-      URL.revokeObjectURL(blobUrl);
-      return new Error("was created not correct Blob link");
-    }
-    return checkLink(blobUrl);
+    return getImg(URL.createObjectURL(blob));
   } catch (err) {
     console.error(err);
-    return undefined;
   }
+}
+
+async function addImg(elem, positionPicture) {
+  if (linkBase[positionPicture] !== undefined) {
+    elem.appendChild(linkBase[positionPicture]);
+    return;
+  }
+
+  elem.classList.add("loadingImg");
+  const response = await fetchHandler(positionPicture);
+  elem.classList.remove("loadingImg");
+  elem.innerHTML = "";
+
+  if (response === undefined) {
+    addButtonReload(elem, positionPicture);
+    return;
+  }
+
+  elem.appendChild(response);
+  linkBase[positionPicture] = response;
+}
+
+function getImg(url) {
+  return new Promise(function (resolve, reject) {
+    const img = new Image();
+    img.className = "imgContainer";
+
+    img.onload = function () {
+      if (img.naturalHeight > 0) resolve(img);
+    };
+    img.onerror = function () {
+      reject(new Error("Img was not loaded!"));
+    };
+
+    img.src = url;
+  });
 }
 
 function runGallery() {
@@ -47,8 +76,8 @@ function runGallery() {
 
   container.addEventListener("wheel", function (e) {
     if (e.deltaX !== 0) return;
-
     let direction = Math.sign(e.deltaY);
+    if (direction === 0 && 1 / direction === -Infinity) direction = -1;
     if (direction == -1 && positionNow === 0) return;
 
     throttleScroll(direction);
@@ -57,10 +86,10 @@ function runGallery() {
 
 function printContainers() {
   widthPicture = window.innerWidth / AMOUNT_OF_CONTAINERS;
-  const heightPicture = (widthPicture / 3) * 2;
+  heightPicture = (widthPicture / 3) * 2;
 
   const radius = (window.innerWidth - widthPicture) / 2;
-  const degreeOfRotation = HALF_CIRCLE / LOADED_ELEMENTS;
+  const degreeOfRotation = HALF_CIRCLE / VISIBLE_ELEMENTS;
   let currentAngle = 0;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
@@ -73,34 +102,31 @@ function printContainers() {
     newContainer.style.top = `${
       Math.sin(-currentAngle) * radius + window.innerHeight
     }px`;
+
     currentAngle += (Math.PI / HALF_CIRCLE) * degreeOfRotation;
+
     addImg(newContainer, i);
   }
 }
 
 function scrollGallery(direction) {
   const galleryContainers = container.querySelectorAll(".element");
-  let lastElementPosition = null;
-  let positionElemForTransition = null;
+  const lastElementPosition = direction === 1 ? AMOUNT_OF_CONTAINERS - 1 : 0;
+  const positionElemForTransition =
+    direction === 1 ? 0 : AMOUNT_OF_CONTAINERS - 1;
 
   positionNow = positionNow + direction;
   let newPositionId = positionNow;
 
-  if (direction === 1) {
-    lastElementPosition = AMOUNT_OF_CONTAINERS - 1;
-    newPositionId += LOADED_ELEMENTS;
-    positionElemForTransition = 0;
-  } else {
-    lastElementPosition = 0;
-    positionElemForTransition = AMOUNT_OF_CONTAINERS - 1;
-  }
+  if (direction === 1) newPositionId += VISIBLE_ELEMENTS;
+
   const lastElement = galleryContainers[lastElementPosition];
   const lastElemLeft = lastElement.style.left;
   const lastElemTop = lastElement.style.top;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
     changePositionElement(
-      direction === 1 ? LOADED_ELEMENTS - i : i,
+      direction === 1 ? VISIBLE_ELEMENTS - i : i,
       galleryContainers
     );
   }
@@ -128,28 +154,6 @@ function scrollGallery(direction) {
     nextElement.style.left = leftPrevElement;
     nextElement.style.top = topPrevElement;
   }
-}
-
-async function addImg(elem, positionPicture) {
-  if (linkBase[positionPicture] !== undefined) {
-    const newImg = createElem("img", "imgContainer", elem);
-    newImg.src = linkBase[positionPicture];
-    return;
-  }
-
-  elem.classList.add("loadingImg");
-  const response = await fetchHandler();
-  elem.classList.remove("loadingImg");
-  elem.innerHTML = "";
-
-  if (response === undefined) {
-    addButtonReload(elem, positionPicture);
-    return;
-  }
-
-  const newImg = createElem("img", "imgContainer", elem);
-  linkBase[positionPicture] = response;
-  newImg.src = response;
 }
 
 function addContainer(newContainer, direction) {
@@ -194,26 +198,6 @@ function addButtonReload(elem, positionPicture) {
       once: true,
     }
   );
-}
-
-function checkLink(url) {
-  const heightPicture = (widthPicture / 3) * 2;
-
-  return new Promise(function (resolve, reject) {
-    const img = new Image();
-    img.onload = function () {
-      if (checkImg(img, heightPicture)) resolve(url);
-    };
-    img.onerror = function () {
-      reject(new Error("Img was not loaded!"));
-    };
-
-    img.src = url;
-  });
-}
-
-function checkImg(img, heightPicture) {
-  return img.complete && img.naturalHeight >= heightPicture;
 }
 
 function throttle(callback, time) {
