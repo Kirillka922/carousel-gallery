@@ -182,7 +182,7 @@ function createElem(
     elem.style.left = lastElemLeft;
     elem.style.top = lastElemTop;
     elem.style.width = `${widthPicture}px`;
-    elem.style.height = `${(widthPicture / 3) * 2}px`;
+    elem.style.height = `${heightPicture}px`;
   }
   return elem;
 }
