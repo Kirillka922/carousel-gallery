@@ -5,7 +5,8 @@ const VISIBLE_ELEMENTS = 8;
 const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 const container = document.getElementById("container");
-const linkBase = [];
+const imgArray = [];
+
 let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
@@ -29,8 +30,8 @@ async function fetchHandler(positionPicture) {
 }
 
 async function addImg(elem, positionPicture) {
-  if (linkBase[positionPicture] !== undefined) {
-    elem.appendChild(linkBase[positionPicture]);
+  if (imgArray[positionPicture] !== undefined) {
+    elem.appendChild(imgArray[positionPicture]);
     return;
   }
 
@@ -45,7 +46,7 @@ async function addImg(elem, positionPicture) {
   }
 
   elem.appendChild(response);
-  linkBase[positionPicture] = response;
+  imgArray[positionPicture] = response;
 }
 
 function getImg(url) {
