@@ -12,10 +12,8 @@ let positionNow = 0;
 
 async function fetchHandler(positionPicture) {
   try {
-    const randomNumber = new Date().getTime() + positionPicture;
-
-    const response = await fetch(`${url}?id=${randomNumber}`);
-    if (response.status !== 200) return new Error("Server Error!");
+    const response = await fetch(getUniqueUrl(url));
+    if (response.status !== 200) throw new Error("Server Error!");
 
     const data = await response.json();
     const link = data.drinks[0].strDrinkThumb;
@@ -214,6 +212,11 @@ function throttle(callback, time) {
     }, time);
   }
   return wrapper;
+}
+
+function getUniqueUrl(url) {
+  const randomNumber = Math.floor(Math.random() * 100);
+  return `${url}?id=${new Date().getTime() + randomNumber}`;
 }
 
 runGallery();
