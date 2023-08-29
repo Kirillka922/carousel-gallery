@@ -11,19 +11,26 @@ let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
 
-async function fetchHandler(positionPicture) {
+async function getFetchImg(positionPicture) {
   try {
-    const response = await fetch(getUniqueUrl(url));
-    if (response.status !== 200) throw new Error("Server Error!");
+    const responseApi = await fetch(getUniqueUrl(url, positionPicture));
+    if (responseApi.status !== 200) throw new Error("Server Error!");
+    const jsonApi = await responseApi.json();
+    const imgUrl = jsonApi.drinks[0].strDrinkThumb;
+    let responseImg = await fetch(imgUrl);
+    if (responseImg.status !== 200) throw new Error("Server Error");
+    const blobImg = await responseImg.blob();
 
-    const data = await response.json();
-    const link = data.drinks[0].strDrinkThumb;
-    let nestedResponse = await fetch(link);
-
-    if (nestedResponse.status !== 200) throw new Error("Server Error");
-
-    const blob = await nestedResponse.blob();
-    return getImg(URL.createObjectURL(blob));
+    return new Promise((resolve) => {
+      const imgDrink = createElem("img", "imgContainer");
+      imgDrink.onload = () => {
+        resolve(imgDrink);
+      };
+      imgDrink.onerror = () => {
+        console.error("Img was not loaded!");
+      };
+      imgDrink.src = URL.createObjectURL(blobImg);
+    });
   } catch (err) {
     console.error(err);
   }
@@ -36,7 +43,8 @@ async function addImg(elem, positionPicture) {
   }
 
   elem.classList.add("loadingImg");
-  const response = await fetchHandler(positionPicture);
+  const response = await getFetchImg(positionPicture);
+
   elem.classList.remove("loadingImg");
   elem.innerHTML = "";
 
@@ -47,26 +55,6 @@ async function addImg(elem, positionPicture) {
 
   elem.appendChild(response);
   imgArray[positionPicture] = response;
-}
-
-function getImg(url) {
-  return new Promise(function (resolve, reject) {
-    const img = new Image();
-    img.className = "imgContainer";
-
-    img.onload = function () {
-      if (img.naturalHeight > 0) {
-        resolve(img);
-      } else {
-        reject(new Error("Img was not loaded!"));
-      }
-    };
-    img.onerror = function () {
-      reject(new Error("Img was not loaded!"));
-    };
-
-    img.src = url;
-  });
 }
 
 function runGallery() {
@@ -115,48 +103,61 @@ function printContainers() {
 function scrollGallery(direction) {
   const galleryContainers = container.querySelectorAll(".element");
   const lastElementPosition = direction === 1 ? AMOUNT_OF_CONTAINERS - 1 : 0;
-  const positionElemForTransition =
-    direction === 1 ? 0 : AMOUNT_OF_CONTAINERS - 1;
 
   positionNow = positionNow + direction;
-  let newPositionId = positionNow;
-
-  if (direction === 1) newPositionId += VISIBLE_ELEMENTS;
 
   const lastElement = galleryContainers[lastElementPosition];
   const lastElemLeft = lastElement.style.left;
   const lastElemTop = lastElement.style.top;
 
+  const newPositionId =
+    direction === 1 ? positionNow + VISIBLE_ELEMENTS : positionNow;
+
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
+    const positionElement = direction === 1 ? VISIBLE_ELEMENTS - i : i;
     changePositionElement(
-      direction === 1 ? VISIBLE_ELEMENTS - i : i,
-      galleryContainers
+      positionElement,
+      galleryContainers,
+      direction,
+      lastElemLeft,
+      lastElemTop,
+      newPositionId
     );
   }
+}
 
-  function changePositionElement(positionElement, galleryContainers) {
-    if (positionElement === positionElemForTransition) {
-      galleryContainers[positionElemForTransition].remove();
-      const newContainer = createElem(
-        "div",
-        "element",
-        container,
-        lastElemLeft,
-        lastElemTop
-      );
-      addContainer(newContainer, direction);
-      addImg(newContainer, newPositionId);
+function changePositionElement(
+  positionElement,
+  galleryContainers,
+  direction,
+  lastElemLeft,
+  lastElemTop,
+  newPositionId
+) {
+  const positionElemForTransition =
+    direction === 1 ? 0 : AMOUNT_OF_CONTAINERS - 1;
 
-      return;
-    }
-    const prevElement = galleryContainers[positionElement - direction];
-    const leftPrevElement = prevElement.style.left;
-    const topPrevElement = prevElement.style.top;
-    const nextElement = galleryContainers[positionElement];
+  if (positionElement === positionElemForTransition) {
+    galleryContainers[positionElemForTransition].remove();
+    const newContainer = createElem(
+      "div",
+      "element",
+      container,
+      lastElemLeft,
+      lastElemTop
+    );
+    addContainer(newContainer, direction);
+    addImg(newContainer, newPositionId);
 
-    nextElement.style.left = leftPrevElement;
-    nextElement.style.top = topPrevElement;
+    return;
   }
+  const prevElement = galleryContainers[positionElement - direction];
+  const leftPrevElement = prevElement.style.left;
+  const topPrevElement = prevElement.style.top;
+  const nextElement = galleryContainers[positionElement];
+
+  nextElement.style.left = leftPrevElement;
+  nextElement.style.top = topPrevElement;
 }
 
 function addContainer(newContainer, direction) {
@@ -170,13 +171,13 @@ function addContainer(newContainer, direction) {
 function createElem(
   tag,
   className,
-  container,
+  container = null,
   lastElemLeft = null,
   lastElemTop = null
 ) {
   const elem = document.createElement(tag);
   elem.className = className;
-  container.append(elem);
+  if (container) container.append(elem);
 
   if (lastElemLeft && lastElemTop) {
     elem.style.left = lastElemLeft;
@@ -219,9 +220,8 @@ function throttle(callback, time) {
   return wrapper;
 }
 
-function getUniqueUrl(url) {
-  const randomNumber = Math.floor(Math.random() * 100);
-  return `${url}?id=${new Date().getTime() + randomNumber}`;
+function getUniqueUrl(url, positionPicture) {
+  return `${url}?id=${new Date().getTime()}${positionPicture}`;
 }
 
 runGallery();
