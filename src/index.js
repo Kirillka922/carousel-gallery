@@ -24,7 +24,9 @@ async function getFetchImg(positionPicture) {
     return new Promise((resolve) => {
       const imgDrink = createElem("img", "imgContainer");
       imgDrink.onload = () => {
-        resolve(imgDrink);
+        imgDrink.naturalHeight > 0
+          ? resolve(imgDrink)
+          : console.error("Img was not loaded!");
       };
       imgDrink.onerror = () => {
         console.error("Img was not loaded!");
