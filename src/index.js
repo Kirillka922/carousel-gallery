@@ -6,6 +6,7 @@ const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 const container = document.getElementById("container");
 const imgArray = [];
+const MINIMUM_SCROLL = 30;
 
 let heightPicture = 0;
 let widthPicture = 0;
@@ -34,7 +35,7 @@ async function addImg(elem, positionPicture) {
   }
 
   elem.classList.add("loadingImg");
-  let response = await fetchUrl(positionPicture);
+  let imgUrl = await fetchUrl(positionPicture);
 
   elem.classList.remove("loadingImg");
   elem.innerHTML = "";
@@ -46,17 +47,20 @@ async function addImg(elem, positionPicture) {
       elem.appendChild(imgDrink);
       imgArray[positionPicture] = imgDrink;
     } else {
-      console.error(new Error("The picture wasn't loaded!"));
-      addButtonReload(elem, positionPicture);
+      addReloadModeImg(elem, positionPicture);
     }
   };
 
   imgDrink.onerror = () => {
-    console.error(new Error("The picture wasn't loaded!"));
-    addButtonReload(elem, positionPicture);
+    addReloadModeImg(elem, positionPicture);
   };
 
-  imgDrink.src = response;
+  imgDrink.src = imgUrl;
+}
+
+function addReloadModeImg(elem, positionPicture) {
+  console.error(new Error("The picture wasn't loaded!"));
+  addButtonReload(elem, positionPicture);
 }
 
 function runGallery() {
@@ -68,9 +72,13 @@ function runGallery() {
   );
 
   container.addEventListener("wheel", function (e) {
-    if (e.deltaX !== 0) return;
-    let direction = null;
-    e.deltaY > 0 ? (direction = 1) : (direction = -1);
+    const isScrollX = e.deltaX !== 0;
+    const isScrollYInGoogle = Math.abs(e.deltaY) % 1 !== 0;
+    if (isScrollX) return;
+    if (isScrollYInGoogle && isScrollX) return;
+    if (Math.abs(e.deltaY) < MINIMUM_SCROLL) return;
+
+    const direction = e.deltaY > 0 ? 1 : -1;
     if (direction == -1 && positionNow === 0) return;
 
     throttleScroll(direction);
@@ -122,7 +130,8 @@ function printContainers() {
   let currentAngle = 0;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const newContainer = createElem("div", "element", container);
+    const optionsNewElement = { container };
+    const newContainer = createElem("div", "element", optionsNewElement);
 
     newContainer.style.width = `${widthPicture}px`;
     newContainer.style.height = `${heightPicture}px`;
@@ -138,14 +147,9 @@ function printContainers() {
   }
 }
 
-function addContainer(direction, lastElemLeft, lastElemTop) {
-  const newContainer = createElem(
-    "div",
-    "element",
-    container,
-    lastElemLeft,
-    lastElemTop
-  );
+function addContainer(direction, elemLeft, elemTop) {
+  const optionsNewElement = { container: container, elemLeft, elemTop };
+  const newContainer = createElem("div", "element", optionsNewElement);
 
   direction === -1
     ? container.prepend(newContainer)
@@ -154,20 +158,17 @@ function addContainer(direction, lastElemLeft, lastElemTop) {
   return newContainer;
 }
 
-function createElem(
-  tag,
-  className,
-  container = null,
-  lastElemLeft = null,
-  lastElemTop = null
-) {
+function createElem(tag, className, options = null) {
   const elem = document.createElement(tag);
   elem.className = className;
-  if (container) container.append(elem);
 
-  if (lastElemLeft && lastElemTop) {
-    elem.style.left = lastElemLeft;
-    elem.style.top = lastElemTop;
+  if (!options) return elem;
+
+  if ("container" in options) options.container.append(elem);
+
+  if ("elemLeft" in options && "elemTop" in options) {
+    elem.style.left = options.elemLeft;
+    elem.style.top = options.elemTop;
     elem.style.width = `${widthPicture}px`;
     elem.style.height = `${heightPicture}px`;
   }
@@ -175,7 +176,8 @@ function createElem(
 }
 
 function addButtonReload(elem, positionPicture) {
-  const button = createElem("button", "buttonReload", elem);
+  const optionsNewElement = { container: elem };
+  const button = createElem("button", "buttonReload", optionsNewElement);
   let textNode = document.createTextNode("Try again");
   button.append(textNode);
   button.addEventListener(
