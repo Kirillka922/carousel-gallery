@@ -47,18 +47,18 @@ async function addImg(elem, positionPicture) {
       elem.appendChild(imgDrink);
       imgArray[positionPicture] = imgDrink;
     } else {
-      addReloadModeImg(elem, positionPicture);
+      addReloadImgMode(elem, positionPicture);
     }
   };
 
   imgDrink.onerror = () => {
-    addReloadModeImg(elem, positionPicture);
+    addReloadImgMode(elem, positionPicture);
   };
 
   imgDrink.src = imgUrl;
 }
 
-function addReloadModeImg(elem, positionPicture) {
+function addReloadImgMode(elem, positionPicture) {
   console.error(new Error("The picture wasn't loaded!"));
   addButtonReload(elem, positionPicture);
 }
