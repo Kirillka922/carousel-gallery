@@ -73,16 +73,17 @@ function runGallery() {
 
   container.addEventListener("wheel", function (e) {
     const isScrollX = e.deltaX !== 0;
+    //we use  "% 1" because we have floating point numbers
+    //for "e.deltaX" and "e.deltaY" arguments
+    // in google browser with windows system.
     const isScrollYInGoogle = Math.abs(e.deltaY) % 1 !== 0;
     if (isScrollX) return;
     if (isScrollYInGoogle) return;
     if (Math.abs(e.deltaY) < MINIMUM_SCROLL) return;
-    console.log(`y ${e.deltaY} -x ${e.deltaX}`);
     const direction = e.deltaY > 0 ? 1 : -1;
     if (direction == -1 && positionNow === 0) return;
 
     throttleScroll(direction);
-    l;
   });
 }
 
