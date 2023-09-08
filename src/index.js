@@ -72,17 +72,12 @@ function runGallery() {
   );
 
   container.addEventListener("wheel", function (e) {
-    const isScrollX = e.deltaX !== 0;
-    //we use  "% 1" because we have floating point numbers
-    //for "e.deltaX" and "e.deltaY" arguments
-    // in google browser with windows system.
-    const isScrollYInGoogle = Math.abs(e.deltaY) % 1 !== 0;
-    if (isScrollX) return;
-    if (isScrollYInGoogle) return;
-    if (Math.abs(e.deltaY) < MINIMUM_SCROLL) return;
-    const direction = e.deltaY > 0 ? 1 : -1;
-    if (direction == -1 && positionNow === 0) return;
+    if (e.wheelDeltaX !== 0) return;
+    if (e.wheelDeltaY <= 2 && e.wheelDeltaY >= -2) return;
 
+    let direction = e.wheelDeltaY < -2 ? 1 : -1;
+
+    if (direction === -1 && positionNow === 0) return;
     throttleScroll(direction);
   });
 }
@@ -90,7 +85,7 @@ function runGallery() {
 function scrollGallery(direction) {
   positionNow = positionNow + direction;
 
-  const newContainer = changePositionGallery(direction);
+  const newContainer = recountStateGallery(direction);
 
   const newPositionId =
     direction === 1 ? positionNow + VISIBLE_ELEMENTS : positionNow;
@@ -98,7 +93,7 @@ function scrollGallery(direction) {
   addImg(newContainer, newPositionId);
 }
 
-function changePositionGallery(direction) {
+function recountStateGallery(direction) {
   const galleryContainers = container.querySelectorAll(".element");
 
   const lastElementPosition = direction === 1 ? AMOUNT_OF_CONTAINERS - 1 : 0;
@@ -132,8 +127,7 @@ function printContainers() {
   let currentAngle = 0;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const optionsNewElement = { container };
-    const newContainer = createElem("div", "element", optionsNewElement);
+    const newContainer = createElem("div", "element", { container });
 
     newContainer.style.width = `${widthPicture}px`;
     newContainer.style.height = `${heightPicture}px`;
@@ -150,8 +144,11 @@ function printContainers() {
 }
 
 function addContainer(direction, elemLeft, elemTop) {
-  const optionsNewElement = { container: container, elemLeft, elemTop };
-  const newContainer = createElem("div", "element", optionsNewElement);
+  const newContainer = createElem("div", "element", {
+    container: container,
+    elemLeft,
+    elemTop,
+  });
 
   direction === -1
     ? container.prepend(newContainer)
@@ -166,9 +163,9 @@ function createElem(tag, className, options = null) {
 
   if (!options) return elem;
 
-  if ("container" in options) options.container.append(elem);
+  if (options.hasOwnProperty("container")) options.container.append(elem);
 
-  if ("elemLeft" in options && "elemTop" in options) {
+  if (options.hasOwnProperty("elemLeft") && options.hasOwnProperty("elemTop")) {
     elem.style.left = options.elemLeft;
     elem.style.top = options.elemTop;
     elem.style.width = `${widthPicture}px`;
@@ -178,8 +175,7 @@ function createElem(tag, className, options = null) {
 }
 
 function addButtonReload(elem, positionPicture) {
-  const optionsNewElement = { container: elem };
-  const button = createElem("button", "buttonReload", optionsNewElement);
+  const button = createElem("button", "buttonReload", { container: elem });
   let textNode = document.createTextNode("Try again");
   button.append(textNode);
   button.addEventListener(
