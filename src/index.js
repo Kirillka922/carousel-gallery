@@ -6,7 +6,6 @@ const AMOUNT_OF_CONTAINERS = 9;
 const url = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 const container = document.getElementById("container");
 const imgArray = [];
-const MINIMUM_SCROLL = 30;
 
 let heightPicture = 0;
 let widthPicture = 0;
