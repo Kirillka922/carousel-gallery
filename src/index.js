@@ -39,27 +39,29 @@ async function addImg(elem, positionPicture) {
   elem.classList.remove("loadingImg");
   elem.innerHTML = "";
 
-  const imgDrink = createElem("img", "imgContainer");
+  const newImg = createElem("img", "imgContainer");
 
-  imgDrink.onload = () => {
-    if (imgDrink.naturalHeight > 0) {
-      elem.appendChild(imgDrink);
-      imgArray[positionPicture] = imgDrink;
+  newImg.onload = () => {
+    if (newImg.naturalHeight > 0) {
+      elem.appendChild(newImg);
+      imgArray[positionPicture] = newImg;
     } else {
-      addReloadImgMode(elem, positionPicture);
+      URL.revokeObjectURL(imgUrl);
+      addReloadImgButton(elem, positionPicture);
     }
   };
 
-  imgDrink.onerror = () => {
-    addReloadImgMode(elem, positionPicture);
+  newImg.onerror = () => {
+    URL.revokeObjectURL(imgUrl);
+    addReloadImgButton(elem, positionPicture);
   };
 
-  imgDrink.src = imgUrl;
+  newImg.src = imgUrl;
 }
 
-function addReloadImgMode(elem, positionPicture) {
+function addReloadImgButton(elem, positionPicture) {
   console.error(new Error("The picture wasn't loaded!"));
-  addButtonReload(elem, positionPicture);
+  addReloadButton(elem, positionPicture);
 }
 
 function runGallery() {
@@ -72,9 +74,8 @@ function runGallery() {
 
   container.addEventListener("wheel", function (e) {
     if (e.wheelDeltaX !== 0) return;
-    if (e.wheelDeltaY <= 2 && e.wheelDeltaY >= -2) return;
 
-    let direction = e.wheelDeltaY < -2 ? 1 : -1;
+    let direction = e.wheelDeltaY < 0 ? 1 : -1;
 
     if (direction === -1 && positionNow === 0) return;
     throttleScroll(direction);
@@ -144,7 +145,7 @@ function printContainers() {
 
 function addContainer(direction, elemLeft, elemTop) {
   const newContainer = createElem("div", "element", {
-    container: container,
+    container,
     elemLeft,
     elemTop,
   });
@@ -173,7 +174,7 @@ function createElem(tag, className, options = null) {
   return elem;
 }
 
-function addButtonReload(elem, positionPicture) {
+function addReloadButton(elem, positionPicture) {
   const button = createElem("button", "buttonReload", { container: elem });
   let textNode = document.createTextNode("Try again");
   button.append(textNode);
