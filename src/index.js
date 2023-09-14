@@ -76,16 +76,16 @@ function runGallery() {
   container.addEventListener("wheel", function (e) {
     if (e.wheelDeltaX !== 0) return;
     if (e.wheelDeltaY === 0) return;
-
-    if (deltaY === null || deltaY !== Math.abs(e.wheelDeltaY)) {
-      deltaY = Math.abs(e.wheelDeltaY);
-    } else return;
-
     const direction = e.wheelDeltaY < 0 ? 1 : -1;
-
+   
+    if(deltaY===null || deltaY !== Math.abs(e.wheelDeltaY)){
+      deltaY = Math.abs(e.wheelDeltaY);
+    }else return;
+    
     if (direction === -1 && positionNow === 0) return;
     throttleScroll(direction);
   });
+ 
 }
 
 function scrollGallery(direction) {
