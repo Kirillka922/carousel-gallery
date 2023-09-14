@@ -10,6 +10,7 @@ const imgArray = [];
 let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
+let deltaY = null;
 
 async function fetchUrl(positionPicture) {
   try {
@@ -71,12 +72,19 @@ function runGallery() {
     (direction) => scrollGallery(direction),
     THROTTLE_TIME
   );
-
+ 
   container.addEventListener("wheel", function (e) {
+    
     if (e.wheelDeltaX !== 0) return;
-
+    if (e.wheelDeltaY === 0) return;
     let direction = e.wheelDeltaY < 0 ? 1 : -1;
-
+    
+    if(deltaY===null){
+      deltaY = Math.abs(e.wheelDeltaY);
+    }else if(deltaY !== Math.abs(e.wheelDeltaY)){
+      deltaY = Math.abs(e.wheelDeltaY);
+    }else return;
+    
     if (direction === -1 && positionNow === 0) return;
     throttleScroll(direction);
   });
