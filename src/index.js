@@ -72,19 +72,17 @@ function runGallery() {
     (direction) => scrollGallery(direction),
     THROTTLE_TIME
   );
- 
+
   container.addEventListener("wheel", function (e) {
-    
     if (e.wheelDeltaX !== 0) return;
     if (e.wheelDeltaY === 0) return;
-    let direction = e.wheelDeltaY < 0 ? 1 : -1;
-    
-    if(deltaY===null){
+
+    if (deltaY === null || deltaY !== Math.abs(e.wheelDeltaY)) {
       deltaY = Math.abs(e.wheelDeltaY);
-    }else if(deltaY !== Math.abs(e.wheelDeltaY)){
-      deltaY = Math.abs(e.wheelDeltaY);
-    }else return;
-    
+    } else return;
+
+    const direction = e.wheelDeltaY < 0 ? 1 : -1;
+
     if (direction === -1 && positionNow === 0) return;
     throttleScroll(direction);
   });
