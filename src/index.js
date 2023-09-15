@@ -10,7 +10,6 @@ const imgArray = [];
 let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
-let deltaY = null;
 
 async function fetchUrl(positionPicture) {
   try {
@@ -66,6 +65,8 @@ function addReloadImgButton(elem, positionPicture) {
 }
 
 function runGallery() {
+  let deltaY = null;
+
   printContainers();
 
   const throttleScroll = throttle(
@@ -74,12 +75,13 @@ function runGallery() {
   );
 
   container.addEventListener("wheel", function (e) {
-    if (e.wheelDeltaX !== 0) return;
-    if (e.wheelDeltaY === 0) return;
+    if (e.wheelDeltaX !== 0 || e.wheelDeltaY === 0) return;
+    
     const direction = e.wheelDeltaY < 0 ? 1 : -1;
+const absDeltaY = Math.abs(e.wheelDeltaY);
 
-    if (deltaY === null || deltaY !== Math.abs(e.wheelDeltaY)) {
-      deltaY = Math.abs(e.wheelDeltaY);
+    if (deltaY === null || deltaY !== absDeltaY) {
+      deltaY = absDeltaY;
     } else return;
 
     if (direction === -1 && positionNow === 0) return;
