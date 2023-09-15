@@ -76,9 +76,9 @@ function runGallery() {
 
   container.addEventListener("wheel", function (e) {
     if (e.wheelDeltaX !== 0 || e.wheelDeltaY === 0) return;
-    
+
     const direction = e.wheelDeltaY < 0 ? 1 : -1;
-const absDeltaY = Math.abs(e.wheelDeltaY);
+    const absDeltaY = Math.abs(e.wheelDeltaY);
 
     if (deltaY === null || deltaY !== absDeltaY) {
       deltaY = absDeltaY;
