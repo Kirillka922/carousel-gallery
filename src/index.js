@@ -65,8 +65,6 @@ function addReloadImgButton(elem, positionPicture) {
 }
 
 function runGallery() {
-  let deltaY = null;
-
   printContainers();
 
   const throttleScroll = throttle(
@@ -74,19 +72,27 @@ function runGallery() {
     THROTTLE_TIME
   );
 
-  container.addEventListener("wheel", function (e) {
-    if (e.wheelDeltaX !== 0 || e.wheelDeltaY === 0) return;
+  container.addEventListener(
+    "wheel",
+    function (e) {
+      e.preventDefault();
 
-    const direction = e.wheelDeltaY < 0 ? 1 : -1;
-    const absDeltaY = Math.abs(e.wheelDeltaY);
+      const isZeroCoordinates = e.wheelDeltaY === 0 || e.deltaY === 0;
+      const isXSwipe = e.wheelDeltaX !== 0;
+      //we have the remainder of division for a zoom touchpad gesture
+      //in google for e.deltaY property
+      const isRemainder = e.deltaY % 1 === 0;
 
-    if (deltaY === null || deltaY !== absDeltaY) {
-      deltaY = absDeltaY;
-    } else return;
+      if (isXSwipe || isZeroCoordinates || !isRemainder) return;
 
-    if (direction === -1 && positionNow === 0) return;
-    throttleScroll(direction);
-  });
+      const direction = e.wheelDeltaY < 0 ? 1 : -1;
+
+      if (direction === -1 && positionNow === 0) return;
+
+      throttleScroll(direction);
+    },
+    {passive: false}
+  );
 }
 
 function scrollGallery(direction) {
@@ -134,15 +140,19 @@ function printContainers() {
   let currentAngle = 0;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const newContainer = createElem("div", "element", { container });
+    const newContainer = createElem("div", "element", {container});
 
     newContainer.style.width = `${widthPicture}px`;
     newContainer.style.height = `${heightPicture}px`;
 
-    newContainer.style.left = `${Math.cos(currentAngle) * radius + radius}px`;
-    newContainer.style.top = `${
+    newContainer.style.left = `${parseInt(
+      Math.cos(currentAngle) * radius + radius
+    )}px`;
+    //we need to use 'parseInt' because
+    //we need to get only integer coordinates!
+    newContainer.style.top = `${parseInt(
       Math.sin(-currentAngle) * radius + window.innerHeight
-    }px`;
+    )}px`;
 
     currentAngle += (Math.PI / HALF_CIRCLE) * degreeOfRotation;
 
@@ -169,20 +179,20 @@ function createElem(tag, className, options = null) {
   elem.className = className;
 
   if (!options) return elem;
+  options.container?.append(elem);
 
-  if (options.hasOwnProperty("container")) options.container.append(elem);
+  if (!chechCords([options.elemLeft, options.elemTop])) return elem;
 
-  if (options.hasOwnProperty("elemLeft") && options.hasOwnProperty("elemTop")) {
-    elem.style.left = options.elemLeft;
-    elem.style.top = options.elemTop;
-    elem.style.width = `${widthPicture}px`;
-    elem.style.height = `${heightPicture}px`;
-  }
+  elem.style.left = options.elemLeft;
+  elem.style.top = options.elemTop;
+  elem.style.width = `${widthPicture}px`;
+  elem.style.height = `${heightPicture}px`;
+
   return elem;
 }
 
 function addReloadButton(elem, positionPicture) {
-  const button = createElem("button", "buttonReload", { container: elem });
+  const button = createElem("button", "buttonReload", {container: elem});
   let textNode = document.createTextNode("Try again");
   button.append(textNode);
   button.addEventListener(
@@ -215,6 +225,18 @@ function throttle(callback, time) {
 
 function getUniqueUrl(url, positionPicture) {
   return `${url}?id=${new Date().getTime()}${positionPicture}`;
+}
+
+function chechCords(cords) {
+  for (let i = 0; i < cords.length; i++) {
+    if (!cords[i]) return false;
+    const nextCordinate = cords[i];
+    const isContainRowPx = nextCordinate.indexOf("px") === -1;
+    const getNumber = parseInt(nextCordinate);
+    if (!Number.isInteger(getNumber) || isContainRowPx) return false;
+    if (`${getNumber}px` !== nextCordinate) return false;
+  }
+  return true;
 }
 
 runGallery();
