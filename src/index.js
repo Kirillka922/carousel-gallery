@@ -91,7 +91,7 @@ function runGallery() {
 
       throttleScroll(direction);
     },
-    {passive: false}
+    { passive: false }
   );
 }
 
@@ -140,7 +140,7 @@ function printContainers() {
   let currentAngle = 0;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const newContainer = createElem("div", "element", {container});
+    const newContainer = createElem("div", "element", { container });
 
     newContainer.style.width = `${widthPicture}px`;
     newContainer.style.height = `${heightPicture}px`;
@@ -181,7 +181,7 @@ function createElem(tag, className, options = null) {
   if (!options) return elem;
   options.container?.append(elem);
 
-  if (!chechCords([options.elemLeft, options.elemTop])) return elem;
+  if (!checkCords([options.elemLeft, options.elemTop])) return elem;
 
   elem.style.left = options.elemLeft;
   elem.style.top = options.elemTop;
@@ -192,7 +192,7 @@ function createElem(tag, className, options = null) {
 }
 
 function addReloadButton(elem, positionPicture) {
-  const button = createElem("button", "buttonReload", {container: elem});
+  const button = createElem("button", "buttonReload", { container: elem });
   let textNode = document.createTextNode("Try again");
   button.append(textNode);
   button.addEventListener(
@@ -227,14 +227,14 @@ function getUniqueUrl(url, positionPicture) {
   return `${url}?id=${new Date().getTime()}${positionPicture}`;
 }
 
-function chechCords(cords) {
+function checkCords(cords) {
   for (let i = 0; i < cords.length; i++) {
     if (!cords[i]) return false;
-    const nextCordinate = cords[i];
-    const isContainRowPx = nextCordinate.indexOf("px") === -1;
-    const getNumber = parseInt(nextCordinate);
+    const nextCoordinate = cords[i];
+    const isContainRowPx = nextCoordinate.indexOf("px") === -1;
+    const getNumber = parseInt(nextCoordinate);
     if (!Number.isInteger(getNumber) || isContainRowPx) return false;
-    if (`${getNumber}px` !== nextCordinate) return false;
+    if (`${getNumber}px` !== nextCoordinate) return false;
   }
   return true;
 }
