@@ -1,5 +1,5 @@
 import "./main.css";
-const THROTTLE_TIME = 500;
+const THROTTLE_TIME = 700;
 const HALF_CIRCLE = 180;
 const VISIBLE_ELEMENTS = 8;
 const AMOUNT_OF_CONTAINERS = 9;
@@ -10,6 +10,7 @@ const imgArray = [];
 let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
+let statusScroll = true;
 
 async function fetchUrl(positionPicture) {
   try {
@@ -79,8 +80,7 @@ function runGallery() {
 
       const isZeroCoordinates = e.wheelDeltaY === 0 || e.deltaY === 0;
       const isXSwipe = e.wheelDeltaX !== 0;
-      //we have the remainder of division for a zoom touchpad gesture
-      //in google for e.deltaY property
+
       const isRemainder = e.deltaY % 1 === 0;
 
       if (isXSwipe || isZeroCoordinates || !isRemainder) return;
@@ -96,6 +96,8 @@ function runGallery() {
 }
 
 function scrollGallery(direction) {
+  switchOnTransition(true);
+
   positionNow = positionNow + direction;
 
   const newContainer = recountStateGallery(direction);
@@ -110,8 +112,12 @@ function recountStateGallery(direction) {
   const galleryContainers = container.querySelectorAll(".element");
 
   const lastElementPosition = direction === 1 ? AMOUNT_OF_CONTAINERS - 1 : 0;
-  const lastElemLeft = galleryContainers[lastElementPosition].style.left;
-  const lastElemTop = galleryContainers[lastElementPosition].style.top;
+  const lastElemLeft = parseFloat(
+    galleryContainers[lastElementPosition].style.left
+  );
+  const lastElemTop = parseFloat(
+    galleryContainers[lastElementPosition].style.top
+  );
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS - 1; i++) {
     const positionElement = direction === 1 ? VISIBLE_ELEMENTS - i : i;
@@ -132,36 +138,54 @@ function recountStateGallery(direction) {
 }
 
 function printContainers() {
-  widthPicture = window.innerWidth / AMOUNT_OF_CONTAINERS;
-  heightPicture = (widthPicture / 3) * 2;
-
-  const radius = (window.innerWidth - widthPicture) / 2;
-  const degreeOfRotation = HALF_CIRCLE / VISIBLE_ELEMENTS;
-  let currentAngle = 0;
+  const cords = getCords();
+  const galleryContainers = container.querySelectorAll(".element");
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    const newContainer = createElem("div", "element", { container });
-
-    newContainer.style.width = `${widthPicture}px`;
-    newContainer.style.height = `${heightPicture}px`;
-
-    newContainer.style.left = `${parseInt(
-      Math.cos(currentAngle) * radius + radius
-    )}px`;
-    //we need to use 'parseInt' because
-    //we need to get only integer coordinates!
-    newContainer.style.top = `${parseInt(
-      Math.sin(-currentAngle) * radius + window.innerHeight
-    )}px`;
-
-    currentAngle += (Math.PI / HALF_CIRCLE) * degreeOfRotation;
-
+    const newContainer = createElem("div", "element elementTransition", {
+      container,
+    });
+    addCordsToContainer(cords[i], newContainer);
     addImg(newContainer, i);
   }
 }
 
+window.addEventListener("resize", () => {
+  const galleryContainers = container.querySelectorAll(".element");
+
+  switchOnTransition(false);
+
+  const cords = getCords();
+
+  for (let i = 0; i < galleryContainers.length; i++) {
+    addCordsToContainer(cords[i], galleryContainers[i]);
+  }
+});
+
+function getCords() {
+  widthPicture = window.innerWidth / AMOUNT_OF_CONTAINERS;
+  heightPicture = (widthPicture / 3) * 2;
+
+  const radiusX = (window.innerWidth - widthPicture) / 2;
+  const radiusY = window.innerHeight - heightPicture;
+
+  const cords = [];
+  const degreeOfRotation = HALF_CIRCLE / VISIBLE_ELEMENTS;
+  let currentAngle = 0;
+
+  for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
+    cords.push([
+      Math.cos(currentAngle) * radiusX + radiusX,
+      Math.sin(-currentAngle) * radiusY + window.innerHeight,
+    ]);
+    currentAngle += (Math.PI / HALF_CIRCLE) * degreeOfRotation;
+  }
+
+  return cords;
+}
+
 function addContainer(direction, elemLeft, elemTop) {
-  const newContainer = createElem("div", "element", {
+  const newContainer = createElem("div", "element elementTransition", {
     container,
     elemLeft,
     elemTop,
@@ -179,14 +203,12 @@ function createElem(tag, className, options = null) {
   elem.className = className;
 
   if (!options) return elem;
+
   options.container?.append(elem);
 
-  if (!checkCords([options.elemLeft, options.elemTop])) return elem;
+  if (isNaN(options.elemLeft) || isNaN(options.elemTop)) return elem;
 
-  elem.style.left = options.elemLeft;
-  elem.style.top = options.elemTop;
-  elem.style.width = `${widthPicture}px`;
-  elem.style.height = `${heightPicture}px`;
+  addCordsToContainer([options.elemLeft, options.elemTop], elem);
 
   return elem;
 }
@@ -227,16 +249,24 @@ function getUniqueUrl(url, positionPicture) {
   return `${url}?id=${new Date().getTime()}${positionPicture}`;
 }
 
-function checkCords(cords) {
-  for (let i = 0; i < cords.length; i++) {
-    if (!cords[i]) return false;
-    const nextCoordinate = cords[i];
-    const isContainRowPx = nextCoordinate.indexOf("px") === -1;
-    const getNumber = parseInt(nextCoordinate);
-    if (!Number.isInteger(getNumber) || isContainRowPx) return false;
-    if (`${getNumber}px` !== nextCoordinate) return false;
-  }
-  return true;
+function addCordsToContainer(cords, container) {
+  const leftPicture = cords[0];
+  const topPicture = cords[1];
+  container.style.width = `${widthPicture}px`;
+  container.style.height = `${heightPicture}px`;
+  container.style.left = `${leftPicture}px`;
+  container.style.top = `${topPicture}px`;
+}
+function switchOnTransition(newStatusScroll) {
+  if (newStatusScroll === statusScroll) return;
+  const galleryContainers = container.querySelectorAll(".element");
+
+  galleryContainers.forEach((container) => {
+    newStatusScroll
+      ? container.classList.add("elementTransition")
+      : container.classList.remove("elementTransition");
+  });
+  statusScroll = newStatusScroll;
 }
 
 runGallery();
