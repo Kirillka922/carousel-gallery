@@ -10,7 +10,7 @@ const imgArray = [];
 let heightPicture = 0;
 let widthPicture = 0;
 let positionNow = 0;
-let statusScroll = true;
+let transitionScrollOn = true;
 
 async function fetchUrl(positionPicture) {
   try {
@@ -73,26 +73,22 @@ function runGallery() {
     THROTTLE_TIME
   );
 
-  container.addEventListener(
-    "wheel",
-    function (e) {
-      e.preventDefault();
+  container.addEventListener("wheel", function (e) {
+    e.preventDefault();
 
-      const isZeroCoordinates = e.wheelDeltaY === 0 || e.deltaY === 0;
-      const isXSwipe = e.wheelDeltaX !== 0;
+    const isZeroCoordinates = e.wheelDeltaY === 0 || e.deltaY === 0;
+    const isXSwipe = e.wheelDeltaX !== 0;
 
-      const isRemainder = e.deltaY % 1 === 0;
+    const isRemainder = e.deltaY % 1 === 0;
 
-      if (isXSwipe || isZeroCoordinates || !isRemainder) return;
+    if (isXSwipe || isZeroCoordinates || !isRemainder) return;
 
-      const direction = e.wheelDeltaY < 0 ? 1 : -1;
+    const direction = e.wheelDeltaY < 0 ? 1 : -1;
 
-      if (direction === -1 && positionNow === 0) return;
+    if (direction === -1 && positionNow === 0) return;
 
-      throttleScroll(direction);
-    },
-    { passive: false }
-  );
+    throttleScroll(direction);
+  });
 }
 
 function scrollGallery(direction) {
@@ -139,7 +135,6 @@ function recountStateGallery(direction) {
 
 function printContainers() {
   const cords = getCords();
-  const galleryContainers = container.querySelectorAll(".element");
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
     const newContainer = createElem("div", "element elementTransition", {
@@ -149,18 +144,6 @@ function printContainers() {
     addImg(newContainer, i);
   }
 }
-
-window.addEventListener("resize", () => {
-  const galleryContainers = container.querySelectorAll(".element");
-
-  switchOnTransition(false);
-
-  const cords = getCords();
-
-  for (let i = 0; i < galleryContainers.length; i++) {
-    addCordsToContainer(cords[i], galleryContainers[i]);
-  }
-});
 
 function getCords() {
   widthPicture = window.innerWidth / AMOUNT_OF_CONTAINERS;
@@ -214,7 +197,7 @@ function createElem(tag, className, options = null) {
 }
 
 function addReloadButton(elem, positionPicture) {
-  const button = createElem("button", "buttonReload", { container: elem });
+  const button = createElem("button", "buttonReload", {container: elem});
   let textNode = document.createTextNode("Try again");
   button.append(textNode);
   button.addEventListener(
@@ -257,16 +240,29 @@ function addCordsToContainer(cords, container) {
   container.style.left = `${leftPicture}px`;
   container.style.top = `${topPicture}px`;
 }
-function switchOnTransition(newStatusScroll) {
-  if (newStatusScroll === statusScroll) return;
+
+function switchOnTransition(value) {
+  if (value === transitionScrollOn) return;
   const galleryContainers = container.querySelectorAll(".element");
 
   galleryContainers.forEach((container) => {
-    newStatusScroll
+    value
       ? container.classList.add("elementTransition")
       : container.classList.remove("elementTransition");
   });
-  statusScroll = newStatusScroll;
+  transitionScrollOn = value;
 }
+
+window.addEventListener("resize", () => {
+  const galleryContainers = container.querySelectorAll(".element");
+
+  switchOnTransition(false);
+
+  const cords = getCords();
+
+  for (let i = 0; i < galleryContainers.length; i++) {
+    addCordsToContainer(cords[i], galleryContainers[i]);
+  }
+});
 
 runGallery();
