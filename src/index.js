@@ -138,14 +138,14 @@ function recountStateGallery(direction) {
 }
 
 function printContainers() {
-  const cords = getCords();
+  const coordinates = getCoordinatesPictures();
   const galleryContainers = container.querySelectorAll(".element");
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
     const newContainer = createElem("div", "element elementTransition", {
       container,
     });
-    addCordsToContainer(cords[i], newContainer);
+    addCordsToContainer(coordinates[i], newContainer);
     addImg(newContainer, i);
   }
 }
@@ -155,33 +155,35 @@ window.addEventListener("resize", () => {
 
   switchOnTransition(false);
 
-  const cords = getCords();
+  const coordinates = getCoordinatesPictures();
 
   for (let i = 0; i < galleryContainers.length; i++) {
-    addCordsToContainer(cords[i], galleryContainers[i]);
+    addCordsToContainer(coordinates[i], galleryContainers[i]);
   }
 });
 
-function getCords() {
+function getCoordinatesPictures() {
   widthPicture = window.innerWidth / AMOUNT_OF_CONTAINERS;
   heightPicture = (widthPicture / 3) * 2;
 
   const radiusX = (window.innerWidth - widthPicture) / 2;
-  const radiusY = window.innerHeight - heightPicture;
+  const radiusY = window.innerHeight;
+  //we will use a minimum radius for y coordinate!
+  const minimalRadius = radiusX < radiusY ? radiusX : radiusY;
 
-  const cords = [];
+  const coordinates = [];
   const degreeOfRotation = HALF_CIRCLE / VISIBLE_ELEMENTS;
   let currentAngle = 0;
 
   for (let i = 0; i < AMOUNT_OF_CONTAINERS; i++) {
-    cords.push([
-      Math.cos(currentAngle) * radiusX + radiusX,
-      Math.sin(-currentAngle) * radiusY + window.innerHeight,
-    ]);
+    const leftPicture = Math.cos(currentAngle) * radiusX + radiusX;
+    const topPicture =
+      Math.sin(-currentAngle) * minimalRadius + window.innerHeight;
+    coordinates.push([leftPicture, topPicture]);
     currentAngle += (Math.PI / HALF_CIRCLE) * degreeOfRotation;
   }
 
-  return cords;
+  return coordinates;
 }
 
 function addContainer(direction, elemLeft, elemTop) {
@@ -250,8 +252,8 @@ function getUniqueUrl(url, positionPicture) {
 }
 
 function addCordsToContainer(cords, container) {
-  const leftPicture = cords[0];
-  const topPicture = cords[1];
+  const [leftPicture, topPicture] = [cords[0], cords[1]];
+
   container.style.width = `${widthPicture}px`;
   container.style.height = `${heightPicture}px`;
   container.style.left = `${leftPicture}px`;
