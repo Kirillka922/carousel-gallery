@@ -1,25 +1,37 @@
-let path = require("path");
+const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const mode = process.env.NODE_ENV || "development";
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
-let conf = {
-  entry: "./src/main.js",
-  output: {
-    path: path.resolve(__dirname, "./dist"),
-    filename: "main.js",
-    //publicPath: "/dist/",
-  },
+module.exports = {
+  mode,
   devServer: {
-    //port: 3031,
-    proxy: {
-      "/": {
-        target: "https://966e3a17bd14-817885256656399495.ngrok-free.app",
-        secure: false,
-        changeOrigin: true,
-      },
-    },
+    port: 8090,
+    static: "./dist",
+    hot: true,
   },
-};
-module.exports = (env, options) => {
-  let isProd = options.mode === "production";
-  conf.devtool = isProd ? false : "eval-cheap-module-source-map";
-  return conf;
+  entry: path.resolve(__dirname, "src", "index.js"),
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    clean: true,
+    filename: "index.js",
+    assetModuleFilename: "assets/[name][ext]",
+  },
+
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, "src", "index.html"),
+    }),
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
+    }),
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.css$/i,
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
+      },
+    ],
+  },
 };
